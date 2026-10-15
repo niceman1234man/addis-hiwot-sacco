@@ -19,3 +19,47 @@ export async function createMemberApplication(application) {
     }),
   );
 }
+
+export async function getAdminSession() {
+  return readResponse(await fetch("/api/admin/session"));
+}
+
+export async function getAdminUsers() {
+  return readResponse(await fetch("/api/admin/users"));
+}
+
+export async function inviteAdminUser(user) {
+  return readResponse(
+    await fetch("/api/admin/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(user),
+    }),
+  );
+}
+
+export async function updateAdminUser(id, changes) {
+  return readResponse(
+    await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    }),
+  );
+}
+
+export async function archiveAdminUser(id) {
+  return readResponse(
+    await fetch(`/api/admin/users/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+  );
+}
+
+export async function restoreAdminUser(id) {
+  return readResponse(
+    await fetch(`/api/admin/users/${encodeURIComponent(id)}/restore`, {
+      method: "POST",
+    }),
+  );
+}
