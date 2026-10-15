@@ -19,7 +19,13 @@
 - Staff accounts (`User`) and member applications (`MemberApplication`) are
   separate models. Staff passwords are managed by Clerk and must not be stored
   in the local user model.
+- `/admin` manages administrator/staff accounts only. The signed-in account can
+  update its password under `/account`; Clerk's sign-in page provides password
+  recovery.
+- After connecting MongoDB, run `npm run admin:bootstrap` to invite the first
+  administrator. The dashboard is protected by Clerk and requires an active
+  administrator account.
 - Member ID documents are stored in a private MongoDB GridFS bucket. There is
   no public file-download route or staff application-review screen yet.
-- The `/admin` page is a placeholder. Do not imply that staff can review member
-  applications through the UI.
+- The staff dashboard manages staff/admin accounts only; member applications
+  remain outside its scope.

@@ -27,6 +27,21 @@ export async function getAdminUsers() {
   return readResponse(await fetch("/api/admin/users"));
 }
 
+export async function exportAdminUsersCsv() {
+  const response = await fetch("/api/admin/users/export.csv");
+  if (!response.ok) await readResponse(response);
+
+  const csv = await response.blob();
+  const url = URL.createObjectURL(csv);
+  const download = document.createElement("a");
+  download.href = url;
+  download.download = "addis-hiwot-staff.csv";
+  document.body.appendChild(download);
+  download.click();
+  download.remove();
+  URL.revokeObjectURL(url);
+}
+
 export async function inviteAdminUser(user) {
   return readResponse(
     await fetch("/api/admin/users", {

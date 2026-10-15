@@ -33,13 +33,17 @@ rejected and nothing is saved.
 
 - `/` — public SACCO landing page.
 - `/register` — membership application form.
-- `/admin` — staff portal placeholder; application review is not implemented.
+- `/admin` — administrator dashboard for staff accounts (invite, edit role/name,
+  archive, restore, and export a CSV report).
+- `/sign-in` — Clerk staff sign-in, including the built-in forgot-password flow.
+- `/account` — Clerk account profile and password-security settings.
 - `GET /api/health` — API and MongoDB readiness.
 - `POST /api/applications` — saves a member application and its documents when
   MongoDB is connected. At least one ID side is required (10MB maximum per
   file); passport photos are optional (5MB maximum).
 
 Staff records store email and role in the `User` model. Clerk manages staff
-passwords; application passwords are not stored in MongoDB. The current
-environment still needs MongoDB and Clerk configured before these services are
-available.
+passwords and password recovery; passwords are never stored in MongoDB. Add
+`MONGODB_URI`, then run `npm run admin:bootstrap` to invite the first
+administrator. The dashboard remains unavailable until MongoDB is connected
+and that administrator accepts the invitation.

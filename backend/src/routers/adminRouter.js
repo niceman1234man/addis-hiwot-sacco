@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   archiveAdminUser,
+  exportAdminUsers,
   getAdminSession,
   inviteAdminUser,
   listAdminUsers,
@@ -16,6 +17,7 @@ const adminRouter = Router();
 
 adminRouter.get("/session", requireAdminAccount, getAdminSession);
 adminRouter.use("/users", requireAdminAccount, requireAdminRole);
+adminRouter.get("/users/export.csv", exportAdminUsers);
 adminRouter.get("/users", listAdminUsers);
 adminRouter.post("/users", inviteAdminUser);
 adminRouter.patch("/users/:id", updateAdminUser);

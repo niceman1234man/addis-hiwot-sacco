@@ -58,6 +58,50 @@ export async function listAdminUsers(_request, response) {
   return response.json({ users: users.map(publicUser) });
 }
 
+function csvCell(value) {
+  let text = value == null ? "" : String(value);
+  if (/^[\s]*[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+export async function exportAdminUsers(_request, response) {
+  try {
+    const users = await User.find().sort({ createdAt: -1, name: 1 }).lean();
+    const columns = [
+      ["Name", "name"],
+      ["Email", "email"],
+      ["Role", "role"],
+      ["Status", "status"],
+      ["Created", "createdAt"],
+      ["Updated", "updatedAt"],
+    ];
+    const rows = [
+      columns.map(([label]) => csvCell(label)).join(","),
+      ...users.map((user) =>
+        columns
+          .map(([, field]) => {
+            const value = user[field];
+            return csvCell(value instanceof Date ? value.toISOString() : value);
+          })
+          .join(","),
+      ),
+    ];
+
+    response.setHeader("Content-Type", "text/csv; charset=utf-8");
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename="addis-hiwot-staff-${new Date().toISOString().slice(0, 10)}.csv"`,
+    );
+    response.setHeader("Cache-Control", "private, no-store");
+    return response.send(`\uFEFF${rows.join("\r\n")}\r\n`);
+  } catch (error) {
+    console.error("Unable to export staff accounts:", error.message);
+    return response.status(500).json({
+      message: "The account report could not be created. Please try again.",
+    });
+  }
+}
+
 export async function inviteAdminUser(request, response) {
   const name = typeof request.body?.name === "string" ? request.body.name.trim() : "";
   const email =

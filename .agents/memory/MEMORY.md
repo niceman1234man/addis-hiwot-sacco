@@ -1,0 +1,1 @@
+- [Admin dashboard scope](admin-dashboard-scope.md) — manage admin/staff accounts; member records are outside the dashboard scope.

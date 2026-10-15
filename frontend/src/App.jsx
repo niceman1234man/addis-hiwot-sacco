@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Link, Route, Routes } from "react-router-dom";
 import {
   ArrowDown,
@@ -12,13 +12,18 @@ import {
   Info,
   Landmark,
   Menu,
-  RefreshCw,
   ShieldCheck,
   Sprout,
   UsersRound,
   X,
 } from "lucide-react";
-import { createMemberApplication, getApiHealth } from "./lib/api.js";
+import { createMemberApplication } from "./lib/api.js";
+import AdminPage from "./pages/AdminPage.jsx";
+import {
+  AccountSecurityPage,
+  AdminInvitationPage,
+  AdminSignInPage,
+} from "./pages/StaffAuthPages.jsx";
 
 const regions = [
   "Addis Ababa",
@@ -545,87 +550,15 @@ function RegisterPage() {
   );
 }
 
-function AdminPage() {
-  const [health, setHealth] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  async function loadHealth() {
-    setLoading(true);
-    setError("");
-    try {
-      setHealth(await getApiHealth());
-    } catch (healthError) {
-      setHealth(null);
-      setError(healthError.message || "The health service could not be reached.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => { loadHealth(); }, []);
-
-  return (
-    <SiteLayout>
-      <main className="inner-page">
-        <div className="page-wrap">
-          <div className="page-heading">
-            <span className="eyebrow">Addis Hiwot SACCO · Staff portal</span>
-            <h1>A place for cooperative staff.</h1>
-            <p>This page is a setup placeholder. The staff tools are not ready to use yet.</p>
-          </div>
-          <section className="admin-card">
-            <div>
-              <h2>Staff tools are not implemented yet.</h2>
-              <p>Review and login tools are not ready. There is no staff sign-in or member application review available here today. This page does not provide access to member records.</p>
-              <div className="admin-note"><ShieldCheck size={19} /><span>API and database readiness below reflects the health response only. It is not an indication that staff features are available.</span></div>
-              <div className="admin-caution">For membership questions, please use the application form and the cooperative team can follow up.</div>
-              <Link to="/register" className="text-link">Go to membership application <ArrowRight size={15} /></Link>
-            </div>
-            <section className="health-box" aria-label="API and database setup status" aria-live="polite">
-              <div className="health-heading">
-                <strong>Setup status</strong>
-                <button className="health-refresh" type="button" onClick={loadHealth} disabled={loading}>
-                  <RefreshCw size={12} className={loading ? "animate-spin" : ""} /> Refresh
-                </button>
-              </div>
-              {loading ? (
-                <div className="health-loading" aria-label="Checking setup status">
-                  <div className="skeleton" />
-                  <div className="skeleton" />
-                </div>
-              ) : error ? (
-                <>
-                  <div className="health-row"><span>API</span><span className="health-value"><i className="status-dot bad" />Unavailable</span></div>
-                  <div className="health-row"><span>Database</span><span className="health-value">Unknown</span></div>
-                  <p className="health-error" role="status">{error}</p>
-                </>
-              ) : (
-                <>
-                  <div className="health-row">
-                    <span>API</span>
-                    <span className="health-value"><i className={`status-dot ${health?.status?.toLowerCase() === "ok" ? "ok" : ""}`} />{health?.status || "Unknown"}</span>
-                  </div>
-                  <div className="health-row">
-                    <span>Database</span>
-                    <span className="health-value"><i className={`status-dot ${health?.database?.toLowerCase() === "connected" ? "ok" : ""}`} />{health?.database || "Unknown"}</span>
-                  </div>
-                </>
-              )}
-            </section>
-          </section>
-        </div>
-      </main>
-    </SiteLayout>
-  );
-}
-
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/admin" element={<AdminPage />} />
+      <Route path="/sign-in/*" element={<AdminSignInPage />} />
+      <Route path="/sign-up/*" element={<AdminInvitationPage />} />
+      <Route path="/account/*" element={<AccountSecurityPage />} />
       <Route path="*" element={<HomePage />} />
     </Routes>
   );
