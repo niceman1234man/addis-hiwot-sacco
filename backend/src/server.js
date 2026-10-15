@@ -12,6 +12,7 @@ import {
   clerkProxyMiddleware,
   getClerkProxyHost,
 } from "./middlewares/clerkProxyMiddleware.js";
+import { clerkAuthConfigured } from "./services/clerkClient.js";
 
 const app = express();
 const port = Number(process.env.PORT) || 3001;
@@ -20,14 +21,18 @@ const frontendDist = fileURLToPath(new URL("../../dist/", import.meta.url));
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-app.use(
-  clerkMiddleware((request) => ({
-    publishableKey: publishableKeyFromHost(
-      getClerkProxyHost(request) ?? "",
-      process.env.CLERK_PUBLISHABLE_KEY,
-    ),
-  })),
-);
+if (clerkAuthConfigured) {
+  app.use(
+    clerkMiddleware((request) => ({
+      publishableKey: publishableKeyFromHost(
+        getClerkProxyHost(request) ?? "",
+        process.env.CLERK_PUBLISHABLE_KEY,
+      ),
+    })),
+  );
+} else {
+  console.warn("Clerk is not configured. Staff/admin endpoints will remain unavailable.");
+}
 app.use(express.json({ limit: "32kb" }));
 
 app.get("/api/health", (_request, response) => {

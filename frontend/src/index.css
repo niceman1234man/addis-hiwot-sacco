@@ -166,10 +166,22 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .field-wide { grid-column: 1 / -1; }
 .field label { color: #42574a; font-size: 11px; font-weight: 700; letter-spacing: .03em; }
 .field label span { color: #92978c; font-weight: 500; }
-.field input, .field textarea { width: 100%; min-height: 49px; padding: 12px 13px; border: 1px solid #d9ddcf; border-radius: 2px; outline: none; background: #fffef9; color: var(--ink); font-size: 13px; transition: border-color .2s ease, box-shadow .2s ease; }
+.field input, .field textarea, .field select { width: 100%; min-height: 49px; padding: 12px 13px; border: 1px solid #d9ddcf; border-radius: 2px; outline: none; background: #fffef9; color: var(--ink); font-size: 13px; transition: border-color .2s ease, box-shadow .2s ease; }
 .field textarea { min-height: 98px; resize: vertical; }
 .field input::placeholder, .field textarea::placeholder { color: #a3a99d; }
-.field input:focus, .field textarea:focus { border-color: #68836d; box-shadow: 0 0 0 3px rgba(54,103,73,.1); }
+.field input:focus, .field textarea:focus, .field select:focus { border-color: #68836d; box-shadow: 0 0 0 3px rgba(54,103,73,.1); }
+.form-section-title { padding-top: 8px; border-top: 1px solid var(--line); }
+.form-section-title h3 { margin: 0; font: 700 14px var(--font-display); }
+.document-section-title p { margin: -1px 0 0; color: var(--muted); font-size: 11px; line-height: 1.6; }
+.upload-field input[type="file"] { min-height: auto; padding: 10px; font-size: 11px; }
+.upload-field input[type="file"]::file-selector-button { margin-right: 10px; padding: 8px 10px; border: 1px solid #cbd4c6; background: #edf0e6; color: var(--forest); font: 600 11px var(--font-body); cursor: pointer; }
+.field-help { color: #788176; font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.signature-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.signature-heading label { color: #42574a; font-size: 11px; font-weight: 700; letter-spacing: .03em; }
+.signature-heading label span { display: block; margin-top: 4px; color: #92978c; font-weight: 500; letter-spacing: 0; }
+.signature-clear { padding: 7px 9px; border: 1px solid #cbd4c6; background: transparent; color: var(--forest); font-size: 10px; font-weight: 700; cursor: pointer; }
+.signature-canvas { display: block; width: 100%; height: 150px; border: 1px solid #d9ddcf; background: #fffef9; touch-action: none; cursor: crosshair; }
+.signature-canvas:focus-visible, .signature-clear:focus-visible { outline: 3px solid rgba(54,103,73,.25); outline-offset: 2px; }
 .form-bottom { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-top: 25px; padding-top: 23px; border-top: 1px solid var(--line); }
 .privacy-note { display: flex; align-items: flex-start; gap: 8px; max-width: 260px; color: #788176; font-size: 10px; line-height: 1.55; }
 .privacy-note svg { flex: none; color: var(--forest); }

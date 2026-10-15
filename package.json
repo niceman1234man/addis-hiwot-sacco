@@ -25,6 +25,7 @@
     "http-proxy-middleware": "^4.2.0",
     "lucide-react": "^1.57.0",
     "mongoose": "^9.11.2",
+    "multer": "^2.4.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "react-router-dom": "^7.18.4",

@@ -14,8 +14,7 @@ export async function createMemberApplication(application) {
   return readResponse(
     await fetch("/api/applications", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(application),
+      body: application,
     }),
   );
 }

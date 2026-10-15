@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, Route, Routes } from "react-router-dom";
 import {
   ArrowDown,
@@ -19,6 +19,23 @@ import {
   X,
 } from "lucide-react";
 import { createMemberApplication, getApiHealth } from "./lib/api.js";
+
+const regions = [
+  "Addis Ababa",
+  "Afar",
+  "Amhara",
+  "Benishangul-Gumuz",
+  "Central Ethiopia",
+  "Dire Dawa",
+  "Gambela",
+  "Harari",
+  "Oromia",
+  "Sidama",
+  "Somali",
+  "South Ethiopia",
+  "Southwest Ethiopia",
+  "Tigray",
+];
 
 function SeedMark({ size = 25 }) {
   return (
@@ -276,23 +293,98 @@ function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [hasSignature, setHasSignature] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState({});
+  const signatureCanvas = useRef(null);
+  const isDrawing = useRef(false);
+
+  function updateSelectedFile(event) {
+    const { name, files } = event.currentTarget;
+    setSelectedFiles((current) => ({
+      ...current,
+      [name]: files?.[0]?.name || "",
+    }));
+  }
+
+  function signaturePoint(event) {
+    const canvas = signatureCanvas.current;
+    const bounds = canvas.getBoundingClientRect();
+    return {
+      x: ((event.clientX - bounds.left) / bounds.width) * canvas.width,
+      y: ((event.clientY - bounds.top) / bounds.height) * canvas.height,
+    };
+  }
+
+  function startSignature(event) {
+    const canvas = signatureCanvas.current;
+    if (!canvas) return;
+    event.preventDefault();
+    canvas.setPointerCapture(event.pointerId);
+    const context = canvas.getContext("2d");
+    const point = signaturePoint(event);
+    context.beginPath();
+    context.moveTo(point.x, point.y);
+    context.lineWidth = 3;
+    context.lineCap = "round";
+    context.lineJoin = "round";
+    context.strokeStyle = "#19392e";
+    isDrawing.current = true;
+    setHasSignature(true);
+  }
+
+  function drawSignature(event) {
+    if (!isDrawing.current || !signatureCanvas.current) return;
+    event.preventDefault();
+    const context = signatureCanvas.current.getContext("2d");
+    const point = signaturePoint(event);
+    context.lineTo(point.x, point.y);
+    context.stroke();
+  }
+
+  function stopSignature() {
+    isDrawing.current = false;
+  }
+
+  function clearSignature() {
+    const canvas = signatureCanvas.current;
+    if (!canvas) return;
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    setHasSignature(false);
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
     if (submitting) return;
     setError("");
     const formData = new FormData(event.currentTarget);
-    const application = {
-      fullName: String(formData.get("fullName") || "").trim(),
-      phone: String(formData.get("phone") || "").trim(),
-      email: String(formData.get("email") || "").trim(),
-      nationalId: String(formData.get("nationalId") || "").trim(),
-      address: String(formData.get("address") || "").trim(),
-      occupation: String(formData.get("occupation") || "").trim(),
-    };
+    const front = formData.get("nationalIdFront");
+    const back = formData.get("nationalIdBack");
+    const photo = formData.get("personalPhoto");
+    if (!(front instanceof File && front.size) && !(back instanceof File && back.size)) {
+      setError("Upload at least one national ID document (front or back).");
+      return;
+    }
+    if (front instanceof File && front.size > 10 * 1024 * 1024) {
+      setError("The front of your national ID must be 10MB or smaller.");
+      return;
+    }
+    if (back instanceof File && back.size > 10 * 1024 * 1024) {
+      setError("The back of your national ID must be 10MB or smaller.");
+      return;
+    }
+    if (photo instanceof File && photo.size > 5 * 1024 * 1024) {
+      setError("Your personal photo must be 5MB or smaller.");
+      return;
+    }
+    formData.set(
+      "signature",
+      hasSignature && signatureCanvas.current
+        ? signatureCanvas.current.toDataURL("image/png")
+        : "",
+    );
     setSubmitting(true);
     try {
-      const response = await createMemberApplication(application);
+      const response = await createMemberApplication(formData);
       setResult(response);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submitError) {
@@ -330,38 +422,105 @@ function RegisterPage() {
               ) : (
                 <form className="application-form" onSubmit={handleSubmit}>
                   <div className="form-topline">
-                    <strong>Your details</strong>
-                    <span>We’ll use these to follow up on your application.</span>
+                    <strong>Personal information</strong>
+                    <span>Fields marked * are required.</span>
                   </div>
                   <div className="form-grid">
-                    <div className="field field-wide">
-                      <label htmlFor="fullName">Full name <span>Required</span></label>
-                      <input id="fullName" name="fullName" type="text" autoComplete="name" placeholder="Name as shown on your ID" required maxLength={120} />
+                    <div className="field">
+                      <label htmlFor="firstName">First name *</label>
+                      <input id="firstName" name="firstName" type="text" autoComplete="given-name" required maxLength={80} />
                     </div>
                     <div className="field">
-                      <label htmlFor="phone">Phone number <span>Required</span></label>
-                      <input id="phone" name="phone" type="tel" autoComplete="tel" placeholder="+251 9…" required maxLength={30} />
+                      <label htmlFor="middleName">Middle name</label>
+                      <input id="middleName" name="middleName" type="text" autoComplete="additional-name" maxLength={80} />
                     </div>
                     <div className="field">
-                      <label htmlFor="email">Email address <span>Optional</span></label>
-                      <input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" maxLength={160} />
+                      <label htmlFor="lastName">Last name *</label>
+                      <input id="lastName" name="lastName" type="text" autoComplete="family-name" required maxLength={80} />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="gender">Gender *</label>
+                      <select id="gender" name="gender" required defaultValue="">
+                        <option value="" disabled>Select gender</option>
+                        <option value="female">Female</option>
+                        <option value="male">Male</option>
+                        <option value="other">Other</option>
+                        <option value="prefer_not_to_say">Prefer not to say</option>
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="phoneNumber1">Phone number 1 *</label>
+                      <input id="phoneNumber1" name="phoneNumber1" type="tel" autoComplete="tel" required maxLength={32} />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="phoneNumber2">Phone number 2</label>
+                      <input id="phoneNumber2" name="phoneNumber2" type="tel" autoComplete="tel" maxLength={32} />
                     </div>
                     <div className="field field-wide">
-                      <label htmlFor="nationalId">National ID number <span>Required</span></label>
-                      <input id="nationalId" name="nationalId" type="text" autoComplete="off" placeholder="Enter your national ID number" required maxLength={80} />
+                      <label htmlFor="email">Email</label>
+                      <input id="email" name="email" type="email" autoComplete="email" placeholder="you@example.com" maxLength={254} />
                     </div>
-                    <div className="field field-wide">
-                      <label htmlFor="address">Address <span>Required</span></label>
-                      <textarea id="address" name="address" autoComplete="street-address" placeholder="Your neighbourhood, area, or full address" required maxLength={500} />
+                    <div className="field field-wide form-section-title">
+                      <h3>Address information</h3>
                     </div>
-                    <div className="field field-wide">
-                      <label htmlFor="occupation">Occupation <span>Optional</span></label>
-                      <input id="occupation" name="occupation" type="text" autoComplete="organization-title" placeholder="Your occupation" maxLength={120} />
+                    <div className="field">
+                      <label htmlFor="currentCityRegion">Current city / region *</label>
+                      <select id="currentCityRegion" name="currentCityRegion" required defaultValue="">
+                        <option value="" disabled>Select region</option>
+                        {regions.map((region) => <option key={region} value={region}>{region}</option>)}
+                      </select>
+                    </div>
+                    <div className="field">
+                      <label htmlFor="subCityZone">Sub city / zone *</label>
+                      <input id="subCityZone" name="subCityZone" type="text" required maxLength={100} />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="woreda">Woreda *</label>
+                      <input id="woreda" name="woreda" type="text" required maxLength={100} />
+                    </div>
+                    <div className="field field-wide form-section-title document-section-title">
+                      <h3>Document uploads</h3>
+                      <p><strong>National ID (front &amp; back) *</strong> — Upload at least one side. Files must be JPG, PNG, GIF, WebP, or PDF.</p>
+                    </div>
+                    <div className="field upload-field">
+                      <label htmlFor="nationalIdFront">National ID — front</label>
+                      <input id="nationalIdFront" name="nationalIdFront" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,image/jpeg,image/png,image/gif,image/webp,application/pdf" onChange={updateSelectedFile} />
+                      <span className="field-help">Maximum 10MB{selectedFiles.nationalIdFront ? ` · ${selectedFiles.nationalIdFront}` : ""}</span>
+                    </div>
+                    <div className="field upload-field">
+                      <label htmlFor="nationalIdBack">National ID — back</label>
+                      <input id="nationalIdBack" name="nationalIdBack" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,image/jpeg,image/png,image/gif,image/webp,application/pdf" onChange={updateSelectedFile} />
+                      <span className="field-help">Maximum 10MB{selectedFiles.nationalIdBack ? ` · ${selectedFiles.nationalIdBack}` : ""}</span>
+                    </div>
+                    <div className="field field-wide upload-field">
+                      <label htmlFor="personalPhoto">Personal photo (passport size) <span>Optional</span></label>
+                      <input id="personalPhoto" name="personalPhoto" type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,image/jpeg,image/png,image/gif,image/webp,application/pdf" onChange={updateSelectedFile} />
+                      <span className="field-help">Recent passport-sized photo or PDF · Maximum 5MB{selectedFiles.personalPhoto ? ` · ${selectedFiles.personalPhoto}` : ""}</span>
+                    </div>
+                    <div className="field field-wide signature-field">
+                      <div className="signature-heading">
+                        <label htmlFor="signatureCanvas">Signature <span>Optional · Draw your signature</span></label>
+                        <button className="signature-clear" type="button" onClick={clearSignature}>Clear signature</button>
+                      </div>
+                      <canvas
+                        id="signatureCanvas"
+                        ref={signatureCanvas}
+                        className="signature-canvas"
+                        width="720"
+                        height="200"
+                        aria-label="Draw your signature in this box"
+                        onPointerDown={startSignature}
+                        onPointerMove={drawSignature}
+                        onPointerUp={stopSignature}
+                        onPointerCancel={stopSignature}
+                        onLostPointerCapture={stopSignature}
+                      />
+                      <span className="field-help">Draw your signature in the box above.</span>
                     </div>
                   </div>
                   {error && <div className="form-error" role="alert">{error}</div>}
                   <div className="form-bottom">
-                    <div className="privacy-note"><Info size={14} />Your details are submitted to Addis Hiwot SACCO to support this membership application.</div>
+                    <div className="privacy-note"><Info size={14} />Your details and ID documents are submitted to Addis Hiwot SACCO for this membership application.</div>
                     <button className="button-primary submit-button" type="submit" disabled={submitting}>
                       {submitting ? "Sending application…" : "Submit application"}
                       {!submitting && <ArrowRight size={16} />}
@@ -373,11 +532,11 @@ function RegisterPage() {
             <aside className="form-aside">
               <span className="aside-symbol"><Landmark size={21} /></span>
               <h2>A cooperative begins with its members.</h2>
-              <p>Applying is a first step. Our team will help explain membership and answer your questions as you continue.</p>
+              <p>Applying is a first step. Our team can use your contact details to follow up about membership and answer your questions.</p>
               <div className="aside-divider" />
-              <div className="aside-check"><CheckCircle2 size={15} /> Share accurate contact details so we can reach you.</div>
-              <div className="aside-check"><CheckCircle2 size={15} /> Required fields are marked on the form.</div>
-              <div className="aside-check"><CheckCircle2 size={15} /> Submission does not itself confirm membership.</div>
+              <div className="aside-check"><CheckCircle2 size={15} />Upload at least one side of your national ID.</div>
+              <div className="aside-check"><CheckCircle2 size={15} />Required personal and address fields are marked *.</div>
+              <div className="aside-check"><CheckCircle2 size={15} />Submitting an application does not itself confirm membership.</div>
             </aside>
           </div>
         </div>

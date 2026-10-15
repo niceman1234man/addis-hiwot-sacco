@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { getAuth } from "@clerk/express";
 import User from "../models/User.js";
-import { clerkClient } from "../services/clerkClient.js";
+import { clerkAuthConfigured, clerkClient } from "../services/clerkClient.js";
 
 function unavailable(response) {
   return response.status(503).json({
@@ -64,6 +64,11 @@ async function resolveUser(request) {
 }
 
 export async function requireAdminAccount(request, response, next) {
+  if (!clerkAuthConfigured) {
+    return response.status(503).json({
+      message: "Admin access is unavailable until Clerk is configured.",
+    });
+  }
   if (mongoose.connection.readyState !== 1) return unavailable(response);
 
   try {
