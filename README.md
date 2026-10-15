@@ -14,10 +14,12 @@ npm run dev
 The frontend is served on port 5000 and proxies `/api` requests to the Express
 API on port 3001.
 
-To accept membership applications, add a MongoDB connection string as the
-`MONGODB_URI` Replit Secret, then restart the app. Applications and their private
-document files are saved in MongoDB; without this secret, submissions are
-rejected and nothing is saved.
+To accept membership applications, configure `MONGODB_URI` and the three
+Cloudinary credentials (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and
+`CLOUDINARY_API_SECRET`) in the root `.env` file. Application records remain in
+MongoDB; uploaded ID documents, photos, and signatures are stored in Cloudinary
+as authenticated (non-public) raw assets. Submissions are rejected if either
+MongoDB or Cloudinary is unavailable or unconfigured.
 
 ## Project structure
 
@@ -26,8 +28,8 @@ rejected and nothing is saved.
   (`MemberApplication`) Mongoose models.
 - `backend/src/controllers/` — request handling and persistence logic.
 - `backend/src/routers/` — Express API routes.
-- National ID files are stored in a private MongoDB GridFS bucket and are not
-  exposed through a public download route.
+- New member documents are stored in Cloudinary using authenticated delivery;
+  existing submissions may still reference their original private GridFS files.
 
 ## Routes and current scope
 
@@ -38,8 +40,8 @@ rejected and nothing is saved.
 - `/sign-in` — Clerk staff sign-in, including the built-in forgot-password flow.
 - `/account` — Clerk account profile and password-security settings.
 - `GET /api/health` — API and MongoDB readiness.
-- `POST /api/applications` — saves a member application and its documents when
-  MongoDB is connected. At least one ID side is required (10MB maximum per
+- `POST /api/applications` — saves the application record in MongoDB and its
+  documents in Cloudinary. At least one ID side is required (10MB maximum per
   file); passport photos are optional (5MB maximum).
 
 Staff records store email and role in the `User` model. Clerk manages staff

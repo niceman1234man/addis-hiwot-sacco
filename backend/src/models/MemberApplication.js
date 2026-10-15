@@ -4,7 +4,22 @@ const attachmentSchema = new mongoose.Schema(
   {
     fileId: {
       type: mongoose.Schema.Types.ObjectId,
+      required: false,
+    },
+    cloudinaryPublicId: {
+      type: String,
       required: true,
+      maxlength: 255,
+    },
+    resourceType: {
+      type: String,
+      required: true,
+      enum: ["raw"],
+    },
+    deliveryType: {
+      type: String,
+      required: true,
+      enum: ["authenticated"],
     },
     contentType: {
       type: String,

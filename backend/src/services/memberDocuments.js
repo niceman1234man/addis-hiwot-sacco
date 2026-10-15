@@ -1,46 +1,73 @@
-import mongoose from "mongoose";
+import { v2 as cloudinary } from "cloudinary";
 
-const bucketName = "member_private_documents";
+export const cloudinaryConfigured = Boolean(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET,
+);
 
-function getBucket() {
-  if (mongoose.connection.readyState !== 1 || !mongoose.connection.db) {
-    throw new Error("The member document database is not connected.");
-  }
-  return new mongoose.mongo.GridFSBucket(mongoose.connection.db, { bucketName });
+if (cloudinaryConfigured) {
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
 }
 
-export function storeMemberDocument(buffer, { memberId, documentType, contentType, extension }) {
-  const bucket = getBucket();
-  const upload = bucket.openUploadStream(`${memberId}-${documentType}.${extension}`, {
-    contentType,
-    metadata: {
-      memberApplicationId: memberId.toString(),
-      documentType,
-    },
-  });
+function ensureConfigured() {
+  if (!cloudinaryConfigured) {
+    throw new Error(
+      "Cloudinary is not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET.",
+    );
+  }
+}
 
+export function storeMemberDocument(
+  buffer,
+  { memberId, documentType, contentType, extension },
+) {
+  ensureConfigured();
+  const publicId = `${memberId}-${documentType}.${extension}`;
   return new Promise((resolve, reject) => {
-    upload.once("error", async (error) => {
-      try {
-        await upload.abort();
-      } catch {
-        // The upload may already have been aborted by the driver.
-      }
-      reject(error);
-    });
-    upload.once("finish", () => {
-      resolve({
-        fileId: upload.id,
-        contentType,
-        size: buffer.byteLength,
-      });
-    });
+    const upload = cloudinary.uploader.upload_stream(
+      {
+        resource_type: "raw",
+        type: "authenticated",
+        folder: "addis-hiwot-sacco/member-applications",
+        public_id: publicId,
+        overwrite: false,
+        unique_filename: false,
+        use_filename: false,
+      },
+      (error, result) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve({
+          cloudinaryPublicId: result.public_id,
+          resourceType: result.resource_type,
+          deliveryType: result.type,
+          contentType,
+          size: result.bytes ?? buffer.byteLength,
+        });
+      },
+    );
+    upload.once("error", reject);
     upload.end(buffer);
   });
 }
 
-export async function deleteMemberDocument(fileId) {
-  if (!fileId) return;
-  const bucket = getBucket();
-  await bucket.delete(new mongoose.Types.ObjectId(fileId));
+export async function deleteMemberDocument(attachment) {
+  if (!attachment?.cloudinaryPublicId) return;
+  ensureConfigured();
+  const result = await cloudinary.uploader.destroy(attachment.cloudinaryPublicId, {
+    resource_type: attachment.resourceType ?? "raw",
+    type: attachment.deliveryType ?? "authenticated",
+    invalidate: true,
+  });
+  if (result.result !== "ok" && result.result !== "not found") {
+    throw new Error(`Cloudinary deletion failed: ${result.result}`);
+  }
 }

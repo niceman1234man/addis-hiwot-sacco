@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import MemberApplication from "../models/MemberApplication.js";
 import {
+  cloudinaryConfigured,
   deleteMemberDocument,
   storeMemberDocument,
 } from "../services/memberDocuments.js";
@@ -85,6 +86,11 @@ export async function createApplication(request, response) {
       message: "Applications are temporarily unavailable because the database is not connected.",
     });
   }
+  if (!cloudinaryConfigured) {
+    return response.status(503).json({
+      message: "Applications are temporarily unavailable because document storage is not configured.",
+    });
+  }
 
   const nationalIdFront = uploadedFile(request, "nationalIdFront");
   const nationalIdBack = uploadedFile(request, "nationalIdBack");
@@ -102,7 +108,7 @@ export async function createApplication(request, response) {
   }
 
   const memberId = new mongoose.Types.ObjectId();
-  const storedFileIds = [];
+  const storedAttachments = [];
 
   try {
     const filesToStore = {
@@ -121,7 +127,7 @@ export async function createApplication(request, response) {
         contentType: file.contentType,
         extension: file.extension,
       });
-      storedFileIds.push(attachment.fileId);
+      storedAttachments.push(attachment);
       attachments[documentType] = attachment;
     }
 
@@ -152,7 +158,7 @@ export async function createApplication(request, response) {
     });
   } catch (error) {
     const cleanupResults = await Promise.allSettled(
-      storedFileIds.map(deleteMemberDocument),
+      storedAttachments.map(deleteMemberDocument),
     );
     cleanupResults.forEach((result) => {
       if (result.status === "rejected") {
