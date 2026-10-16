@@ -17,14 +17,15 @@
   `backend/src/routers/` separate database models, request handling, and API
   routes.
 - Staff accounts (`User`) and member applications (`MemberApplication`) are
-  separate models. Staff passwords are managed by Clerk and must not be stored
-  in the local user model.
-- `/admin` manages administrator/staff accounts only. The signed-in account can
-  update its password under `/account`; Clerk's sign-in page provides password
-  recovery.
-- After connecting MongoDB, run `npm run admin:bootstrap` to invite the first
-  administrator. The dashboard is protected by Clerk and requires an active
-  administrator account.
+  separate models. Staff passwords are hashed with Node.js scrypt and are
+  never stored in plaintext.
+- `/admin` manages administrator/staff accounts only. Signed-in staff can
+  update their password under `/account`; administrators can register staff
+  and other administrators with initial passwords.
+- After connecting MongoDB, run `npm run admin:bootstrap` to create the first
+  administrator. The dashboard uses database-backed sessions and requires an
+  active administrator account. There is no self-service password recovery;
+  administrators can reset an account's password from the staff directory.
 - Member ID documents are stored in a private MongoDB GridFS bucket. There is
   no public file-download route or staff application-review screen yet.
 - The staff dashboard manages staff/admin accounts only; member applications

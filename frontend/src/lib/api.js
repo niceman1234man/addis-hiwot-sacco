@@ -1,7 +1,9 @@
 async function readResponse(response) {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(body.message || "The request could not be completed.");
+    const error = new Error(body.message || "The request could not be completed.");
+    error.status = response.status;
+    throw error;
   }
   return body;
 }
@@ -23,6 +25,32 @@ export async function getAdminSession() {
   return readResponse(await fetch("/api/admin/session"));
 }
 
+export async function signInAdmin(credentials) {
+  return readResponse(
+    await fetch("/api/admin/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(credentials),
+    }),
+  );
+}
+
+export async function signOutAdmin() {
+  const response = await fetch("/api/admin/session", { method: "DELETE" });
+  if (response.status === 204) return;
+  await readResponse(response);
+}
+
+export async function changeAdminPassword(passwords) {
+  return readResponse(
+    await fetch("/api/admin/password", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(passwords),
+    }),
+  );
+}
+
 export async function getAdminUsers() {
   return readResponse(await fetch("/api/admin/users"));
 }
@@ -42,7 +70,7 @@ export async function exportAdminUsersCsv() {
   URL.revokeObjectURL(url);
 }
 
-export async function inviteAdminUser(user) {
+export async function createAdminUser(user) {
   return readResponse(
     await fetch("/api/admin/users", {
       method: "POST",

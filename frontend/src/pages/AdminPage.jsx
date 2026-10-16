@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useClerk, useUser } from "@clerk/react";
 import {
   Download,
   KeyRound,
@@ -16,11 +15,12 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import {
   archiveAdminUser,
+  createAdminUser,
   exportAdminUsersCsv,
   getAdminSession,
   getAdminUsers,
-  inviteAdminUser,
   restoreAdminUser,
+  signOutAdmin,
   updateAdminUser,
 } from "../lib/api.js";
 
@@ -45,6 +45,7 @@ function AccountDialog({ account, onClose, onSave }) {
   const [name, setName] = useState(account?.name ?? "");
   const [email, setEmail] = useState(account?.email ?? "");
   const [role, setRole] = useState(account?.role ?? "staff");
+  const [password, setPassword] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -53,7 +54,12 @@ function AccountDialog({ account, onClose, onSave }) {
     setSaving(true);
     setError("");
     try {
-      await onSave({ name: name.trim(), email: email.trim(), role });
+      await onSave({
+        name: name.trim(),
+        email: email.trim(),
+        role,
+        password,
+      });
     } catch (saveError) {
       setError(saveError.message || "The account could not be saved.");
     } finally {
@@ -68,8 +74,8 @@ function AccountDialog({ account, onClose, onSave }) {
       <section className="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-dialog-title">
         <div className="dialog-heading">
           <div>
-            <span className="eyebrow">{account ? "Account details" : "Staff invitation"}</span>
-            <h2 id="account-dialog-title">{account ? "Edit account" : "Invite a colleague"}</h2>
+            <span className="eyebrow">{account ? "Account details" : "New staff account"}</span>
+            <h2 id="account-dialog-title">{account ? "Edit account" : "Register a colleague"}</h2>
           </div>
           <button className="icon-button" type="button" aria-label="Close dialog" onClick={onClose} disabled={saving}>
             <X size={18} />
@@ -98,17 +104,29 @@ function AccountDialog({ account, onClose, onSave }) {
               <option value="admin">Administrator</option>
             </select>
           </label>
-          {!account && (
-            <p className="dialog-note">
-              <Mail size={15} />
-              They’ll receive a secure Clerk invitation to create their password.
-            </p>
-          )}
+          <label>
+            {account ? "Set a new password (optional)" : "Initial password"}
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required={!account}
+              minLength={12}
+              maxLength={128}
+            />
+          </label>
+          <p className="dialog-note">
+            <KeyRound size={15} />
+            {account
+              ? "Leave blank to keep the current password. New passwords need at least 12 characters."
+              : "Set an initial password; the account holder can change it after signing in."}
+          </p>
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="dialog-actions">
             <button className="button-secondary" type="button" onClick={onClose} disabled={saving}>Cancel</button>
             <button className="button-primary" type="submit" disabled={saving}>
-              {saving ? "Saving…" : account ? "Save changes" : "Send invitation"}
+              {saving ? "Saving…" : account ? "Save changes" : "Create account"}
             </button>
           </div>
         </form>
@@ -126,7 +144,7 @@ function StaffHeader({ user, isSignedIn, onSignOut }) {
       </Link>
       {isSignedIn ? (
         <div className="staff-user-menu">
-          <span className="staff-user-email">{user?.emailAddresses?.[0]?.emailAddress || "Staff account"}</span>
+          <span className="staff-user-email">{user?.email || "Staff account"}</span>
           <Link className="account-security-link" to="/account"><KeyRound size={14} /> Account security</Link>
           <button className="sign-out-button" type="button" onClick={onSignOut}>
             <LogOut size={15} /> Sign out
@@ -140,10 +158,9 @@ function StaffHeader({ user, isSignedIn, onSignOut }) {
 }
 
 function AdminPage() {
-  const { isLoaded, isSignedIn, user: clerkUser } = useUser();
-  const { signOut } = useClerk();
   const navigate = useNavigate();
   const [session, setSession] = useState(null);
+  const [authLoaded, setAuthLoaded] = useState(false);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -158,14 +175,6 @@ function AdminPage() {
   const reload = useCallback(() => setRefreshKey((value) => value + 1), []);
 
   useEffect(() => {
-    if (!isLoaded) return undefined;
-    if (!isSignedIn) {
-      setLoading(false);
-      setSession(null);
-      setAccounts([]);
-      return undefined;
-    }
-
     let cancelled = false;
     setLoading(true);
     setError("");
@@ -184,17 +193,22 @@ function AdminPage() {
         if (!cancelled) {
           setSession(null);
           setAccounts([]);
-          setError(loadError.message || "Staff accounts could not be loaded.");
+          if (loadError.status !== 401) {
+            setError(loadError.message || "Staff accounts could not be loaded.");
+          }
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setAuthLoaded(true);
+          setLoading(false);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, refreshKey]);
+  }, [refreshKey]);
 
   const visibleAccounts = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
@@ -217,11 +231,15 @@ function AdminPage() {
 
   async function saveAccount(values) {
     if (dialogAccount) {
-      await updateAdminUser(dialogAccount.id, { name: values.name, role: values.role });
-      setNotice("Account details updated.");
+      await updateAdminUser(dialogAccount.id, {
+        name: values.name,
+        role: values.role,
+        password: values.password || undefined,
+      });
+      setNotice(values.password ? "Account details and password updated." : "Account details updated.");
     } else {
-      const result = await inviteAdminUser(values);
-      setNotice(result.message || "Invitation sent.");
+      const result = await createAdminUser(values);
+      setNotice(result.message || "Account created.");
     }
     setDialogAccount(undefined);
     reload();
@@ -268,26 +286,24 @@ function AdminPage() {
   }
 
   async function handleSignOut() {
-    await signOut({ redirectUrl: "/" });
-    navigate("/");
+    try {
+      await signOutAdmin();
+      setSession(null);
+      setAccounts([]);
+      navigate("/sign-in");
+    } catch (signOutError) {
+      setError(signOutError.message || "Sign-out could not be completed.");
+    }
   }
 
   return (
     <div className="staff-shell">
-      <StaffHeader user={clerkUser} isSignedIn={isSignedIn} onSignOut={handleSignOut} />
+      <StaffHeader user={session} isSignedIn={Boolean(session)} onSignOut={handleSignOut} />
       <main className="staff-main">
-        {!isLoaded || loading ? (
+        {!authLoaded || loading ? (
           <section className="staff-state-panel" aria-live="polite">
             <span className="staff-loader" />
             <h1>Checking your staff access…</h1>
-          </section>
-        ) : !isSignedIn ? (
-          <section className="staff-state-panel">
-            <span className="staff-state-icon"><ShieldCheck size={22} /></span>
-            <span className="eyebrow">Staff portal</span>
-            <h1>Sign in to manage staff accounts.</h1>
-            <p>Only invited Addis Hiwot staff can access account management.</p>
-            <Link className="button-primary" to="/sign-in">Staff sign in</Link>
           </section>
         ) : error ? (
           <section className="staff-state-panel staff-error-panel" aria-live="polite">
@@ -298,6 +314,14 @@ function AdminPage() {
             <button className="button-primary" type="button" onClick={reload}>
               <RefreshCw size={15} /> Try again
             </button>
+          </section>
+        ) : !session ? (
+          <section className="staff-state-panel">
+            <span className="staff-state-icon"><ShieldCheck size={22} /></span>
+            <span className="eyebrow">Staff portal</span>
+            <h1>Sign in to manage staff accounts.</h1>
+            <p>Only registered Addis Hiwot staff can access account management.</p>
+            <Link className="button-primary" to="/sign-in">Staff sign in</Link>
           </section>
         ) : session?.role !== "admin" ? (
           <section className="staff-state-panel">
@@ -313,14 +337,14 @@ function AdminPage() {
               <div>
                 <span className="eyebrow">Addis Hiwot SACCO · Staff administration</span>
                 <h1>Staff accounts</h1>
-                <p>Invite colleagues, manage access, and export a staff directory report.</p>
+                <p>Register colleagues, manage access, and export a staff directory report.</p>
               </div>
               <div className="staff-page-actions">
                 <button className="button-secondary" type="button" onClick={exportAccounts} disabled={exporting}>
                   <Download size={16} /> {exporting ? "Preparing…" : "Export report"}
                 </button>
                 <button className="button-primary" type="button" onClick={() => setDialogAccount(null)}>
-                  <Plus size={16} /> Invite staff
+                  <Plus size={16} /> Register staff
                 </button>
               </div>
             </div>

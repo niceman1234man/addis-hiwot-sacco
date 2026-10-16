@@ -1,0 +1,8 @@
+{
+  "name": "addis-hiwot-sacco-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.js"
+  }
+}

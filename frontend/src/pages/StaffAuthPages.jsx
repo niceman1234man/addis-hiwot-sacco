@@ -1,6 +1,7 @@
-import { SignIn, SignUp, UserProfile } from "@clerk/react";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { ArrowLeft, KeyRound } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { changeAdminPassword, getAdminSession, signInAdmin } from "../lib/api.js";
 
 function AuthPage({ children, backTo = "/" }) {
   return (
@@ -23,35 +24,184 @@ function AuthPage({ children, backTo = "/" }) {
 }
 
 export function AdminSignInPage() {
-  return (
-    <AuthPage>
-      <SignIn
-        routing="path"
-        path="/sign-in"
-        signUpUrl="/sign-up"
-        forceRedirectUrl="/admin"
-      />
-    </AuthPage>
-  );
-}
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-export function AdminInvitationPage() {
+  async function submit(event) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError("");
+    try {
+      await signInAdmin({ email, password });
+      navigate("/admin", { replace: true });
+    } catch (signInError) {
+      setError(signInError.message || "Sign-in could not be completed.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   return (
     <AuthPage>
-      <SignUp
-        routing="path"
-        path="/sign-up"
-        signInUrl="/sign-in"
-        forceRedirectUrl="/admin"
-      />
+      <div className="auth-heading">
+        <KeyRound size={20} />
+        <h1>Staff sign in</h1>
+        <p>Sign in to access the Addis Hiwot staff portal.</p>
+      </div>
+      <form className="account-form" onSubmit={submit}>
+        <label>
+          Email address
+          <input
+            type="email"
+            autoComplete="username"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+            maxLength={254}
+          />
+        </label>
+        <label>
+          Password
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            maxLength={128}
+          />
+        </label>
+        {error && <div className="form-error" role="alert">{error}</div>}
+        <button className="button-primary auth-submit" type="submit" disabled={submitting}>
+          {submitting ? "Signing in…" : "Sign in"}
+        </button>
+      </form>
     </AuthPage>
   );
 }
 
 export function AccountSecurityPage() {
+  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authRequired, setAuthRequired] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getAdminSession()
+      .then((result) => {
+        if (!cancelled) {
+          setEmail(result.user.email);
+          setAuthenticated(true);
+        }
+      })
+      .catch((loadError) => {
+        if (!cancelled) {
+          if (loadError.status === 401) {
+            setAuthRequired(true);
+          } else {
+            setError(loadError.message || "Account details could not be loaded.");
+          }
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function submit(event) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (newPassword !== confirmPassword) {
+      setError("The new passwords do not match.");
+      return;
+    }
+    setSaving(true);
+    try {
+      const result = await changeAdminPassword({ currentPassword, newPassword });
+      setNotice(result.message);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (saveError) {
+      setError(saveError.message || "The password could not be updated.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <AuthPage backTo="/admin">
-      <UserProfile routing="path" path="/account" />
+      <div className="auth-heading">
+        <KeyRound size={20} />
+        <h1>Change password</h1>
+        {email && <p>{email}</p>}
+      </div>
+      {loading ? (
+        <p className="auth-message">Loading account…</p>
+      ) : authRequired ? (
+        <div className="auth-message">
+          <p>Sign in to manage your password.</p>
+          <Link className="button-primary auth-submit" to="/sign-in">Staff sign in</Link>
+        </div>
+      ) : !authenticated ? (
+        <div className="auth-message" role="alert">{error}</div>
+      ) : (
+        <form className="account-form" onSubmit={submit}>
+          <label>
+            Current password
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            New password
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+              minLength={12}
+              maxLength={128}
+            />
+          </label>
+          <label>
+            Confirm new password
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              minLength={12}
+              maxLength={128}
+            />
+          </label>
+          {error && <div className="form-error" role="alert">{error}</div>}
+          {notice && <div className="staff-notice" role="status">{notice}</div>}
+          <button className="button-primary auth-submit" type="submit" disabled={saving}>
+            {saving ? "Updating…" : "Update password"}
+          </button>
+        </form>
+      )}
     </AuthPage>
   );
 }

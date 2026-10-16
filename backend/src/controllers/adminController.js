@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
-import { clerkClient } from "../services/clerkClient.js";
 import {
-  createAdminInvitation,
-  revokeAdminInvitation,
-} from "../services/adminInvitations.js";
+  hashPassword,
+  MAX_PASSWORD_LENGTH,
+  MIN_PASSWORD_LENGTH,
+} from "../services/passwords.js";
 
 const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const roles = new Set(["admin", "staff"]);
@@ -20,11 +20,6 @@ function publicUser(user) {
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };
-}
-
-function displayNameParts(name) {
-  const [firstName, ...rest] = name.trim().split(/\s+/);
-  return { firstName, lastName: rest.join(" ") || undefined };
 }
 
 function handleWriteError(error, response) {
@@ -102,13 +97,15 @@ export async function exportAdminUsers(_request, response) {
   }
 }
 
-export async function inviteAdminUser(request, response) {
+export async function createAdminUser(request, response) {
   const name = typeof request.body?.name === "string" ? request.body.name.trim() : "";
   const email =
     typeof request.body?.email === "string"
       ? request.body.email.trim().toLowerCase()
       : "";
   const role = request.body?.role;
+  const password =
+    typeof request.body?.password === "string" ? request.body.password : "";
 
   if (!name || name.length > 120) {
     return response.status(400).json({
@@ -121,40 +118,39 @@ export async function inviteAdminUser(request, response) {
   if (!roles.has(role)) {
     return response.status(400).json({ message: "Choose an admin or staff role." });
   }
+  if (
+    password.length < MIN_PASSWORD_LENGTH ||
+    password.length > MAX_PASSWORD_LENGTH
+  ) {
+    return response.status(400).json({
+      message: `Choose a password between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters.`,
+    });
+  }
   if (role === "admin" && request.adminUser.role !== "admin") {
     return response.status(403).json({
-      message: "Only an administrator can invite another administrator.",
+      message: "Only an administrator can register another administrator.",
     });
   }
 
   let user;
   try {
+    const credentials = await hashPassword(password);
     user = await User.create({
       name,
       email,
       role,
-      status: "invited",
+      status: "active",
+      ...credentials,
       createdBy: request.adminUser._id,
     });
   } catch (error) {
     return handleWriteError(error, response);
   }
 
-  try {
-    const invitation = await createAdminInvitation(user);
-    user.invitationId = invitation.id;
-    await user.save();
-    return response.status(201).json({
-      user: publicUser(user),
-      message: "Invitation sent. The account becomes active after the invite is accepted.",
-    });
-  } catch (error) {
-    await User.deleteOne({ _id: user._id, status: "invited" });
-    console.error("Unable to send admin invitation:", error.message);
-    return response.status(502).json({
-      message: "The account invitation could not be sent. Check the email and try again.",
-    });
-  }
+  return response.status(201).json({
+    user: publicUser(user),
+    message: "Account created. The account holder can sign in and change their password.",
+  });
 }
 
 export async function updateAdminUser(request, response) {
@@ -171,6 +167,8 @@ export async function updateAdminUser(request, response) {
   }
 
   const { name, role } = request.body ?? {};
+  const password =
+    typeof request.body?.password === "string" ? request.body.password : "";
   if (name !== undefined) {
     if (typeof name !== "string" || !name.trim() || name.trim().length > 120) {
       return response.status(400).json({
@@ -203,11 +201,23 @@ export async function updateAdminUser(request, response) {
   }
 
   try {
-    if (user.clerkUserId && name !== undefined) {
-      await clerkClient.users.updateUser(
-        user.clerkUserId,
-        displayNameParts(user.name),
-      );
+    if (password) {
+      if (
+        password.length < MIN_PASSWORD_LENGTH ||
+        password.length > MAX_PASSWORD_LENGTH
+      ) {
+        return response.status(400).json({
+          message: `Choose a password between ${MIN_PASSWORD_LENGTH} and ${MAX_PASSWORD_LENGTH} characters.`,
+        });
+      }
+      const credentials = await hashPassword(password);
+      user.passwordHash = credentials.passwordHash;
+      user.passwordSalt = credentials.passwordSalt;
+      if (user.status === "invited") user.status = "active";
+    }
+    if (password) {
+      user.sessionTokenHash = null;
+      user.sessionExpiresAt = null;
     }
     await user.save();
     return response.json({ user: publicUser(user) });
@@ -244,28 +254,16 @@ export async function archiveAdminUser(request, response) {
   user.status = "archived";
   user.archivedAt ??= new Date();
   user.archivedBy = request.adminUser._id;
+  user.sessionTokenHash = null;
+  user.sessionExpiresAt = null;
   try {
     await user.save();
-    if (!user.providerDisabledAt) {
-      if (user.clerkUserId) {
-        await clerkClient.users.banUser(user.clerkUserId);
-      } else if (user.invitationId) {
-        await revokeAdminInvitation(user.invitationId);
-      }
-      user.providerDisabledAt = new Date();
-      await user.save();
-    }
     return response.json({
       user: publicUser(user),
       message: "Account archived. It can be restored later.",
     });
   } catch (error) {
-    console.error("Account archived but provider access needs attention:", error.message);
-    return response.status(502).json({
-      user: publicUser(user),
-      message:
-        "The account is archived in Addis Hiwot, but sign-in access could not be updated. The admin API remains blocked for this account.",
-    });
+    return handleWriteError(error, response);
   }
 }
 
@@ -274,7 +272,7 @@ export async function restoreAdminUser(request, response) {
     return response.status(400).json({ message: "Invalid account ID." });
   }
 
-  const user = await User.findById(request.params.id);
+  const user = await User.findById(request.params.id).select("+passwordHash");
   if (!user) return response.status(404).json({ message: "Account not found." });
   if (user.status !== "archived") {
     return response.status(409).json({
@@ -283,33 +281,19 @@ export async function restoreAdminUser(request, response) {
   }
 
   try {
-    if (user.clerkUserId) {
-      await clerkClient.users.unbanUser(user.clerkUserId);
-      user.status = "active";
-      user.providerDisabledAt = null;
-      user.archivedAt = null;
-      user.archivedBy = null;
-      await user.save();
-    } else {
-      const invitation = await createAdminInvitation(user);
-      user.invitationId = invitation.id;
-      user.status = "invited";
-      user.providerDisabledAt = null;
-      user.archivedAt = null;
-      user.archivedBy = null;
-      await user.save();
-    }
+    user.status = "active";
+    user.sessionTokenHash = null;
+    user.sessionExpiresAt = null;
+    user.archivedAt = null;
+    user.archivedBy = null;
+    await user.save();
     return response.json({
       user: publicUser(user),
-      message:
-        user.status === "invited"
-          ? "A new invitation was sent."
-          : "Account restored.",
+      message: user.passwordHash
+        ? "Account restored."
+        : "Account restored. Set a password before the user signs in.",
     });
   } catch (error) {
-    console.error("Unable to restore admin account:", error.message);
-    return response.status(502).json({
-      message: "The account could not be restored. Please try again.",
-    });
+    return handleWriteError(error, response);
   }
 }

@@ -16,12 +16,10 @@ const userSchema = new mongoose.Schema(
       maxlength: 254,
       unique: true,
     },
-    clerkUserId: {
-      type: String,
-      unique: true,
-      sparse: true,
-      trim: true,
-    },
+    passwordHash: { type: String, select: false },
+    passwordSalt: { type: String, select: false },
+    sessionTokenHash: { type: String, default: null, select: false },
+    sessionExpiresAt: { type: Date, default: null, select: false },
     role: {
       type: String,
       enum: ["admin", "staff"],
@@ -31,10 +29,9 @@ const userSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["invited", "active", "archived"],
-      default: "invited",
+      default: "active",
       required: true,
     },
-    invitationId: { type: String, default: null },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -46,7 +43,6 @@ const userSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
-    providerDisabledAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

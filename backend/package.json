@@ -1,5 +1,8 @@
 {
   "name": "addis-hiwot-sacco-api",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch scripts/start.js"
+  }
 }

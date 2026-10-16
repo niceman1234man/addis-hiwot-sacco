@@ -1,9 +1,15 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
+import {
+  changeAdminPassword,
+  signInAdmin,
+  signOutAdmin,
+} from "../controllers/authController.js";
 import {
   archiveAdminUser,
   exportAdminUsers,
   getAdminSession,
-  inviteAdminUser,
+  createAdminUser,
   listAdminUsers,
   restoreAdminUser,
   updateAdminUser,
@@ -15,11 +21,23 @@ import {
 
 const adminRouter = Router();
 
+adminRouter.post(
+  "/session",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 10,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  }),
+  signInAdmin,
+);
 adminRouter.get("/session", requireAdminAccount, getAdminSession);
+adminRouter.delete("/session", requireAdminAccount, signOutAdmin);
+adminRouter.patch("/password", requireAdminAccount, changeAdminPassword);
 adminRouter.use("/users", requireAdminAccount, requireAdminRole);
 adminRouter.get("/users/export.csv", exportAdminUsers);
 adminRouter.get("/users", listAdminUsers);
-adminRouter.post("/users", inviteAdminUser);
+adminRouter.post("/users", createAdminUser);
 adminRouter.patch("/users/:id", updateAdminUser);
 adminRouter.delete("/users/:id", archiveAdminUser);
 adminRouter.post("/users/:id/restore", restoreAdminUser);

@@ -3,16 +3,8 @@ import express from "express";
 import mongoose from "mongoose";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { clerkMiddleware } from "@clerk/express";
-import { publishableKeyFromHost } from "@clerk/shared/keys";
 import applicationRouter from "./routers/applicationRouter.js";
 import adminRouter from "./routers/adminRouter.js";
-import {
-  CLERK_PROXY_PATH,
-  clerkProxyMiddleware,
-  getClerkProxyHost,
-} from "./middlewares/clerkProxyMiddleware.js";
-import { clerkAuthConfigured } from "./services/clerkClient.js";
 import { cloudinaryConfigured } from "./services/memberDocuments.js";
 
 const app = express();
@@ -21,19 +13,6 @@ const frontendDist = fileURLToPath(new URL("../../dist/", import.meta.url));
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
-app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
-if (clerkAuthConfigured) {
-  app.use(
-    clerkMiddleware((request) => ({
-      publishableKey: publishableKeyFromHost(
-        getClerkProxyHost(request) ?? "",
-        process.env.CLERK_PUBLISHABLE_KEY,
-      ),
-    })),
-  );
-} else {
-  console.warn("Clerk is not configured. Staff/admin endpoints will remain unavailable.");
-}
 if (!cloudinaryConfigured) {
   console.warn("Cloudinary is not configured. Membership document uploads will remain unavailable.");
 }

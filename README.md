@@ -12,7 +12,8 @@ npm run dev
 ```
 
 The frontend is served on port 5000 and proxies `/api` requests to the Express
-API on port 3001.
+API on port 3001. To run only the API, change to `backend/` and run
+`npm run dev`; this also loads `.env` from the repository root.
 
 To accept membership applications, configure `MONGODB_URI` and the three
 Cloudinary credentials (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and
@@ -35,17 +36,19 @@ MongoDB or Cloudinary is unavailable or unconfigured.
 
 - `/` — public SACCO landing page.
 - `/register` — membership application form.
-- `/admin` — administrator dashboard for staff accounts (invite, edit role/name,
+- `/admin` — administrator dashboard for staff accounts (register, edit role/name,
   archive, restore, and export a CSV report).
-- `/sign-in` — Clerk staff sign-in, including the built-in forgot-password flow.
-- `/account` — Clerk account profile and password-security settings.
+- `/sign-in` — staff email and password sign-in.
+- `/account` — change the signed-in staff member's password.
 - `GET /api/health` — API and MongoDB readiness.
 - `POST /api/applications` — saves the application record in MongoDB and its
   documents in Cloudinary. At least one ID side is required (10MB maximum per
   file); passport photos are optional (5MB maximum).
 
-Staff records store email and role in the `User` model. Clerk manages staff
-passwords and password recovery; passwords are never stored in MongoDB. Add
-`MONGODB_URI`, then run `npm run admin:bootstrap` to invite the first
-administrator. The dashboard remains unavailable until MongoDB is connected
-and that administrator accepts the invitation.
+Staff accounts use passwords hashed with Node.js scrypt; raw passwords are
+never stored. Add `MONGODB_URI`, then run `npm run admin:bootstrap` to create
+the first administrator or reset that administrator's password. An active
+administrator can register staff or additional administrators in `/admin` by
+setting their initial passwords. Account holders can change their passwords
+after signing in. Password recovery requires an administrator to set a new
+password from the staff directory because no email service is configured.

@@ -1,7 +1,6 @@
-@layer theme, base, clerk, components, utilities;
+@layer theme, base, components, utilities;
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Ethiopic:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
-@import "@clerk/themes/shadcn.css";
 
 :root {
   font-family: "DM Sans", "Noto Sans Ethiopic", sans-serif;
@@ -234,6 +233,12 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .auth-card { width: 100%; padding: 22px; border: 1px solid var(--line); background: rgba(251,250,245,.92); box-shadow: 0 18px 50px rgba(38,64,45,.08); }
 .auth-back-link { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; text-decoration: none; }
 .auth-back-link:hover { color: var(--forest); }
+.auth-heading { display: grid; justify-items: center; gap: 10px; text-align: center; }
+.auth-heading > svg { color: var(--forest); }
+.auth-heading h1 { margin: 0; font: 700 24px var(--font-display); }
+.auth-heading p, .auth-message { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; text-align: center; }
+.auth-submit { width: 100%; min-height: 44px; margin-top: 4px; cursor: pointer; }
+.auth-submit:disabled { opacity: .65; cursor: wait; transform: none; }
 
 .staff-shell { min-height: 100dvh; background: #f5f6f2; color: var(--ink); }
 .staff-header { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 12px max(24px, calc((100vw - 1280px) / 2)); border-bottom: 1px solid #e3e7de; background: #fbfaf5; }

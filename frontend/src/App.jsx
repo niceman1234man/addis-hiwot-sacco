@@ -21,7 +21,6 @@ import { createMemberApplication } from "./lib/api.js";
 import AdminPage from "./pages/AdminPage.jsx";
 import {
   AccountSecurityPage,
-  AdminInvitationPage,
   AdminSignInPage,
 } from "./pages/StaffAuthPages.jsx";
 
@@ -557,7 +556,6 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/sign-in/*" element={<AdminSignInPage />} />
-      <Route path="/sign-up/*" element={<AdminInvitationPage />} />
       <Route path="/account/*" element={<AccountSecurityPage />} />
       <Route path="*" element={<HomePage />} />
     </Routes>
