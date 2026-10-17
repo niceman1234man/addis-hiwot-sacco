@@ -7,11 +7,15 @@ import {
 } from "../controllers/authController.js";
 import {
   archiveAdminUser,
+  deleteMember,
   exportAdminUsers,
+  exportMembers,
   getAdminSession,
   createAdminUser,
+  listMembers,
   listAdminUsers,
   restoreAdminUser,
+  updateMember,
   updateAdminUser,
 } from "../controllers/adminController.js";
 import {
@@ -41,5 +45,10 @@ adminRouter.post("/users", createAdminUser);
 adminRouter.patch("/users/:id", updateAdminUser);
 adminRouter.delete("/users/:id", archiveAdminUser);
 adminRouter.post("/users/:id/restore", restoreAdminUser);
+adminRouter.use("/members", requireAdminAccount, requireAdminRole);
+adminRouter.get("/members/export.csv", exportMembers);
+adminRouter.get("/members", listMembers);
+adminRouter.patch("/members/:id", updateMember);
+adminRouter.delete("/members/:id", deleteMember);
 
 export default adminRouter;

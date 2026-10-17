@@ -36,8 +36,11 @@ MongoDB or Cloudinary is unavailable or unconfigured.
 
 - `/` — public SACCO landing page.
 - `/register` — membership application form.
-- `/admin` — administrator dashboard for staff accounts (register, edit role/name,
-  archive, restore, and export a CSV report).
+- `/admin` — administrator dashboard for staff accounts and member applications.
+  Admins can review and update member details/application status, permanently
+  delete a member and associated stored documents, and export a member CSV report.
+  Staff account registration, editing, archiving, restoring, and CSV reports are
+  also available here.
 - `/sign-in` — staff email and password sign-in.
 - `/account` — change the signed-in staff member's password.
 - `GET /api/health` — API and MongoDB readiness.

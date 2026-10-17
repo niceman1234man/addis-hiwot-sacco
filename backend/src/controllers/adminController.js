@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
+import MemberApplication from "../models/MemberApplication.js";
+import { deleteMemberDocument } from "../services/memberDocuments.js";
 import {
   hashPassword,
   MAX_PASSWORD_LENGTH,
@@ -8,6 +10,31 @@ import {
 
 const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const roles = new Set(["admin", "staff"]);
+const memberStatuses = new Set(["pending", "approved", "rejected"]);
+const memberGenders = new Set(["female", "male", "other", "prefer_not_to_say"]);
+
+function publicMember(member) {
+  return {
+    id: String(member._id ?? member.id),
+    firstName: member.firstName,
+    middleName: member.middleName,
+    lastName: member.lastName,
+    gender: member.gender,
+    phoneNumber1: member.phoneNumber1,
+    phoneNumber2: member.phoneNumber2,
+    email: member.email,
+    addressInformation: member.addressInformation,
+    status: member.status,
+    createdAt: member.createdAt,
+    updatedAt: member.updatedAt,
+    documents: {
+      nationalIdFront: Boolean(member.nationalIdFront),
+      nationalIdBack: Boolean(member.nationalIdBack),
+      personalPhoto: Boolean(member.personalPhoto),
+      signature: Boolean(member.signature),
+    },
+  };
+}
 
 function publicUser(user) {
   return {
@@ -94,6 +121,156 @@ export async function exportAdminUsers(_request, response) {
     return response.status(500).json({
       message: "The account report could not be created. Please try again.",
     });
+  }
+}
+
+export async function listMembers(_request, response) {
+  try {
+    const members = await MemberApplication.find().sort({ createdAt: -1 }).lean();
+    return response.json({ members: members.map(publicMember) });
+  } catch (error) {
+    console.error("Unable to load member applications:", error.message);
+    return response.status(500).json({
+      message: "Member applications could not be loaded. Please try again.",
+    });
+  }
+}
+
+export async function exportMembers(_request, response) {
+  try {
+    const members = await MemberApplication.find().sort({ createdAt: -1 }).lean();
+    const columns = [
+      ["First name", "firstName"],
+      ["Middle name", "middleName"],
+      ["Last name", "lastName"],
+      ["Gender", "gender"],
+      ["Primary phone", "phoneNumber1"],
+      ["Secondary phone", "phoneNumber2"],
+      ["Email", "email"],
+      ["City/region", "addressInformation.currentCityRegion"],
+      ["Sub-city/zone", "addressInformation.subCityZone"],
+      ["Woreda", "addressInformation.woreda"],
+      ["Status", "status"],
+      ["Applied", "createdAt"],
+      ["Last updated", "updatedAt"],
+    ];
+    const rows = [
+      columns.map(([label]) => csvCell(label)).join(","),
+      ...members.map((member) =>
+        columns
+          .map(([, field]) => {
+            const value = field.split(".").reduce((current, key) => current?.[key], member);
+            return csvCell(value instanceof Date ? value.toISOString() : value);
+          })
+          .join(","),
+      ),
+    ];
+
+    response.setHeader("Content-Type", "text/csv; charset=utf-8");
+    response.setHeader(
+      "Content-Disposition",
+      `attachment; filename="addis-hiwot-members-${new Date().toISOString().slice(0, 10)}.csv"`,
+    );
+    response.setHeader("Cache-Control", "private, no-store");
+    return response.send(`\uFEFF${rows.join("\r\n")}\r\n`);
+  } catch (error) {
+    console.error("Unable to export member applications:", error.message);
+    return response.status(500).json({
+      message: "The member report could not be created. Please try again.",
+    });
+  }
+}
+
+export async function updateMember(request, response) {
+  if (!mongoose.isValidObjectId(request.params.id)) {
+    return response.status(400).json({ message: "Invalid member ID." });
+  }
+
+  const member = await MemberApplication.findById(request.params.id);
+  if (!member) return response.status(404).json({ message: "Member not found." });
+
+  const body = request.body ?? {};
+  const textFields = ["firstName", "middleName", "lastName", "phoneNumber1", "phoneNumber2", "email"];
+  for (const field of textFields) {
+    if (body[field] === undefined) continue;
+    if (typeof body[field] !== "string") {
+      return response.status(400).json({ message: `Enter a valid ${field}.` });
+    }
+    member[field] = body[field].trim();
+  }
+  if (body.gender !== undefined) {
+    if (!memberGenders.has(body.gender)) {
+      return response.status(400).json({ message: "Choose a valid gender option." });
+    }
+    member.gender = body.gender;
+  }
+  if (body.status !== undefined) {
+    if (!memberStatuses.has(body.status)) {
+      return response.status(400).json({ message: "Choose pending, approved, or rejected status." });
+    }
+    member.status = body.status;
+  }
+  if (body.addressInformation !== undefined) {
+    if (!body.addressInformation || typeof body.addressInformation !== "object" || Array.isArray(body.addressInformation)) {
+      return response.status(400).json({ message: "Enter valid address information." });
+    }
+    for (const field of ["currentCityRegion", "subCityZone", "woreda"]) {
+      if (body.addressInformation[field] !== undefined) {
+        if (typeof body.addressInformation[field] !== "string") {
+          return response.status(400).json({ message: "Enter valid address information." });
+        }
+        member.addressInformation[field] = body.addressInformation[field].trim();
+      }
+    }
+  }
+
+  try {
+    await member.save();
+    return response.json({ member: publicMember(member), message: "Member updated." });
+  } catch (error) {
+    if (error instanceof mongoose.Error.ValidationError) {
+      return response.status(400).json({
+        message: Object.values(error.errors).map((item) => item.message).join(" "),
+      });
+    }
+    console.error("Unable to update member:", error.message);
+    return response.status(500).json({ message: "The member could not be updated. Please try again." });
+  }
+}
+
+export async function deleteMember(request, response) {
+  if (!mongoose.isValidObjectId(request.params.id)) {
+    return response.status(400).json({ message: "Invalid member ID." });
+  }
+
+  const member = await MemberApplication.findById(request.params.id);
+  if (!member) return response.status(404).json({ message: "Member not found." });
+
+  const attachments = [
+    member.nationalIdFront,
+    member.nationalIdBack,
+    member.personalPhoto,
+    member.signature,
+  ].filter(Boolean);
+  const results = await Promise.allSettled(attachments.map(deleteMemberDocument));
+  const cleanupFailed = results.some((result) => result.status === "rejected");
+  if (cleanupFailed) {
+    results.forEach((result) => {
+      if (result.status === "rejected") {
+        console.error("Unable to delete a member document:", result.reason?.message);
+      }
+    });
+    return response.status(502).json({
+      message: "Some member documents could not be deleted. The member record was kept; please retry.",
+    });
+  }
+
+  try {
+    await member.deleteOne();
+    return response.json({ message: "Member and associated documents deleted." });
+  } catch (error) {
+    console.error("Unable to delete member:", error.message);
+    return response.status(500).json({ message: "The member could not be deleted. Please try again." });
   }
 }
 

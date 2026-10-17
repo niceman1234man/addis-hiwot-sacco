@@ -43,7 +43,7 @@ export async function requireAdminAccount(request, response, next) {
 export function requireAdminRole(request, response, next) {
   if (request.adminUser?.role !== "admin") {
     return response.status(403).json({
-      message: "Only an administrator can manage staff accounts.",
+      message: "Only an administrator can access this resource.",
     });
   }
   return next();

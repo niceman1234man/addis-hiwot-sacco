@@ -252,6 +252,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .account-security-link, .sign-out-button { display: inline-flex; align-items: center; gap: 7px; color: #53675a; font-size: 11px; font-weight: 700; text-decoration: none; }
 .sign-out-button { padding: 9px 11px; border: 1px solid #d7ded3; background: transparent; cursor: pointer; }
 .staff-main { width: min(1280px, calc(100% - 48px)); margin: 0 auto; padding: 54px 0 90px; }
+.admin-tabs { display: flex; gap: 6px; margin: 0 0 28px; padding-bottom: 10px; border-bottom: 1px solid #dfe4da; }
+.admin-tab { display: inline-flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid transparent; background: transparent; color: #68766b; font: 700 11px var(--font-body); cursor: pointer; }
+.admin-tab.active { border-color: #dfe4da; border-bottom-color: #fbfaf5; margin-bottom: -11px; background: #fbfaf5; color: var(--forest); }
+.admin-tab span { display: inline-grid; min-width: 20px; height: 20px; place-items: center; border-radius: 99px; background: #e8ede4; color: #4e6854; font-size: 9px; }
 .staff-page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; margin-bottom: 29px; }
 .staff-page-heading h1, .staff-state-panel h1 { margin: 12px 0 7px; font: 600 clamp(2.2rem,4vw,3.25rem)/1.1 var(--font-display); letter-spacing: -.055em; }
 .staff-page-heading p, .staff-state-panel p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.7; }
@@ -292,6 +296,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .status-active { background: #e4eee2; color: #42704b; }
 .status-invited { background: #f6eed6; color: #8a702f; }
 .status-archived { background: #eceee9; color: #6b746e; }
+.status-pending { background: #f6eed6; color: #8a702f; }
+.status-approved { background: #e4eee2; color: #42704b; }
+.status-rejected { background: #f5e5df; color: #9c5742; }
 .account-actions { display: flex; align-items: center; gap: 10px; }
 .table-action, .text-button { display: inline-flex; align-items: center; gap: 5px; padding: 4px 0; border: 0; background: transparent; color: #516b59; font: 700 10px var(--font-body); cursor: pointer; }
 .table-action:disabled { cursor: not-allowed; opacity: .4; }
@@ -309,6 +316,15 @@ button, a { -webkit-tap-highlight-color: transparent; }
 @keyframes staff-spin { to { transform: rotate(360deg); } }
 .dialog-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(20,39,30,.45); }
 .account-dialog { width: min(100%, 500px); max-height: min(90dvh, 760px); overflow: auto; padding: 25px; border: 1px solid var(--line); background: #fbfaf5; box-shadow: 0 20px 70px rgba(10,24,17,.25); }
+.member-dialog { width: min(100%, 760px); }
+.member-form { gap: 13px; }
+.member-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.member-form-grid > label { display: grid; gap: 7px; color: #42574a; font-size: 11px; font-weight: 700; }
+.member-form-grid input, .member-form-grid select { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #d9ddcf; outline: 0; background: #fffef9; color: var(--ink); font: 12px var(--font-body); }
+.member-form-grid input:focus, .member-form-grid select:focus { border-color: #68836d; box-shadow: 0 0 0 3px rgba(54,103,73,.1); }
+.member-document-summary { margin: 0; color: #69766b; font-size: 10px; line-height: 1.6; text-transform: capitalize; }
+.member-email { display: block; margin-top: 4px; color: #7b867d; font-size: 10px; }
+.member-table .account-actions { gap: 9px; }
 .dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 17px; border-bottom: 1px solid var(--line); }
 .dialog-heading h2 { margin: 8px 0 0; font: 700 22px var(--font-display); letter-spacing: -.035em; }
 .icon-button { width: 35px; height: 35px; display: grid; place-items: center; border: 1px solid var(--line); background: transparent; color: #5d6c61; cursor: pointer; }
@@ -417,6 +433,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .directory-footer { align-items: flex-start; flex-direction: column; }
   .auth-card { padding: 14px; }
   .account-dialog { padding: 20px; }
+  .member-form-grid { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

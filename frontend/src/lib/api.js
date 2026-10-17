@@ -105,3 +105,40 @@ export async function restoreAdminUser(id) {
     }),
   );
 }
+
+export async function getAdminMembers() {
+  return readResponse(await fetch("/api/admin/members"));
+}
+
+export async function updateAdminMember(id, changes) {
+  return readResponse(
+    await fetch(`/api/admin/members/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(changes),
+    }),
+  );
+}
+
+export async function deleteAdminMember(id) {
+  return readResponse(
+    await fetch(`/api/admin/members/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }),
+  );
+}
+
+export async function exportAdminMembersCsv() {
+  const response = await fetch("/api/admin/members/export.csv");
+  if (!response.ok) await readResponse(response);
+
+  const csv = await response.blob();
+  const url = URL.createObjectURL(csv);
+  const download = document.createElement("a");
+  download.href = url;
+  download.download = "addis-hiwot-members.csv";
+  document.body.appendChild(download);
+  download.click();
+  download.remove();
+  URL.revokeObjectURL(url);
+}
