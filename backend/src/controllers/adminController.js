@@ -1,7 +1,10 @@
 import mongoose from "mongoose";
 import User from "../models/User.js";
 import MemberApplication from "../models/MemberApplication.js";
-import { deleteMemberDocument } from "../services/memberDocuments.js";
+import {
+  deleteMemberDocument,
+  getMemberDocumentDownloadUrl,
+} from "../services/memberDocuments.js";
 import {
   hashPassword,
   MAX_PASSWORD_LENGTH,
@@ -12,6 +15,12 @@ const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const roles = new Set(["admin", "staff"]);
 const memberStatuses = new Set(["pending", "approved", "rejected"]);
 const memberGenders = new Set(["female", "male", "other", "prefer_not_to_say"]);
+const memberDocumentFields = new Set([
+  "nationalIdFront",
+  "nationalIdBack",
+  "personalPhoto",
+  "signature",
+]);
 
 function publicMember(member) {
   return {
@@ -235,6 +244,46 @@ export async function updateMember(request, response) {
     }
     console.error("Unable to update member:", error.message);
     return response.status(500).json({ message: "The member could not be updated. Please try again." });
+  }
+}
+
+export async function viewMemberDocument(request, response) {
+  if (!mongoose.isValidObjectId(request.params.id)) {
+    return response.status(400).json({ message: "Invalid member ID." });
+  }
+  const { documentType } = request.params;
+  if (!memberDocumentFields.has(documentType)) {
+    return response.status(404).json({ message: "Member document not found." });
+  }
+
+  try {
+    const member = await MemberApplication.findById(request.params.id).select(`+${documentType}`);
+    if (!member) return response.status(404).json({ message: "Member not found." });
+    const attachment = member[documentType];
+    if (!attachment) return response.status(404).json({ message: "Member document not found." });
+
+    const downloadUrl = getMemberDocumentDownloadUrl(attachment);
+    const cloudinaryResponse = await fetch(downloadUrl, { signal: AbortSignal.timeout(15000) });
+    if (!cloudinaryResponse.ok) {
+      console.error("Cloudinary document retrieval failed:", cloudinaryResponse.status);
+      return response.status(502).json({ message: "The member document could not be retrieved." });
+    }
+    const documentBuffer = Buffer.from(await cloudinaryResponse.arrayBuffer());
+    if (documentBuffer.byteLength !== attachment.size) {
+      return response.status(502).json({ message: "The member document could not be verified." });
+    }
+
+    response.setHeader("Content-Type", attachment.contentType);
+    response.setHeader("Content-Length", documentBuffer.byteLength);
+    response.setHeader("Content-Disposition", `inline; filename="member-${member.id}-${documentType}"`);
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("Cache-Control", "private, no-store");
+    return response.send(documentBuffer);
+  } catch (error) {
+    console.error("Unable to retrieve member document:", error.message);
+    return response.status(502).json({
+      message: "The member document could not be retrieved. Please try again.",
+    });
   }
 }
 

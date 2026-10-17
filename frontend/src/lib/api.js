@@ -128,6 +128,14 @@ export async function deleteAdminMember(id) {
   );
 }
 
+export async function getAdminMemberDocument(id, documentType) {
+  const response = await fetch(
+    `/api/admin/members/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentType)}`,
+  );
+  if (!response.ok) await readResponse(response);
+  return response.blob();
+}
+
 export async function exportAdminMembersCsv() {
   const response = await fetch("/api/admin/members/export.csv");
   if (!response.ok) await readResponse(response);

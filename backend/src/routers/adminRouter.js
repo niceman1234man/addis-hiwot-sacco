@@ -15,6 +15,7 @@ import {
   listMembers,
   listAdminUsers,
   restoreAdminUser,
+  viewMemberDocument,
   updateMember,
   updateAdminUser,
 } from "../controllers/adminController.js";
@@ -48,6 +49,7 @@ adminRouter.post("/users/:id/restore", restoreAdminUser);
 adminRouter.use("/members", requireAdminAccount, requireAdminRole);
 adminRouter.get("/members/export.csv", exportMembers);
 adminRouter.get("/members", listMembers);
+adminRouter.get("/members/:id/documents/:documentType", viewMemberDocument);
 adminRouter.patch("/members/:id", updateMember);
 adminRouter.delete("/members/:id", deleteMember);
 

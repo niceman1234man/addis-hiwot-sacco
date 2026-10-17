@@ -21,6 +21,7 @@ import {
   exportAdminMembersCsv,
   exportAdminUsersCsv,
   getAdminMembers,
+  getAdminMemberDocument,
   getAdminSession,
   getAdminUsers,
   restoreAdminUser,
@@ -140,7 +141,7 @@ function AccountDialog({ account, onClose, onSave }) {
   );
 }
 
-function MemberDialog({ member, onClose, onSave }) {
+function MemberDialog({ member, onClose, onSave, onViewDocument }) {
   const [values, setValues] = useState({
     firstName: member.firstName ?? "",
     middleName: member.middleName ?? "",
@@ -156,7 +157,21 @@ function MemberDialog({ member, onClose, onSave }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [documentError, setDocumentError] = useState("");
+  const [openingDocument, setOpeningDocument] = useState("");
   const setField = (field) => (event) => setValues((current) => ({ ...current, [field]: event.target.value }));
+
+  async function viewDocument(documentType) {
+    setDocumentError("");
+    setOpeningDocument(documentType);
+    try {
+      await onViewDocument(member.id, documentType);
+    } catch (viewError) {
+      setDocumentError(viewError.message || "The document could not be opened.");
+    } finally {
+      setOpeningDocument("");
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -209,7 +224,18 @@ function MemberDialog({ member, onClose, onSave }) {
             <label>Sub-city / zone<input value={values.subCityZone} onChange={setField("subCityZone")} required maxLength={100} /></label>
             <label>Woreda<input value={values.woreda} onChange={setField("woreda")} required maxLength={100} /></label>
           </div>
-          <p className="member-document-summary">Documents on file: {Object.entries(member.documents ?? {}).filter(([, present]) => present).map(([name]) => name.replaceAll(/([A-Z])/g, " $1")).join(", ") || "none"}.</p>
+          <section className="member-documents" aria-label="Member documents">
+            <h3>Submitted documents</h3>
+            <div className="member-document-actions">
+              {[["nationalIdFront", "National ID front"], ["nationalIdBack", "National ID back"], ["personalPhoto", "Photo"], ["signature", "Signature"]].map(([type, label]) => (
+                <button className="button-secondary" key={type} type="button" disabled={!member.documents?.[type] || Boolean(openingDocument)} onClick={() => viewDocument(type)}>
+                  {openingDocument === type ? "Opening…" : member.documents?.[type] ? `View ${label}` : `${label} unavailable`}
+                </button>
+              ))}
+            </div>
+            <p className="member-document-summary">Documents are private and can only be viewed by an administrator.</p>
+            {documentError && <div className="form-error" role="alert">{documentError}</div>}
+          </section>
           {error && <div className="form-error" role="alert">{error}</div>}
           <div className="dialog-actions">
             <button className="button-secondary" type="button" onClick={onClose} disabled={saving}>Cancel</button>
@@ -221,7 +247,7 @@ function MemberDialog({ member, onClose, onSave }) {
   );
 }
 
-function MembersPanel({ members, loading, onReload, onExport, onSave, onDelete }) {
+function MembersPanel({ members, loading, onReload, onExport, onSave, onDelete, onViewDocument }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [memberToEdit, setMemberToEdit] = useState(null);
@@ -299,7 +325,7 @@ function MembersPanel({ members, loading, onReload, onExport, onSave, onDelete }
         </tbody></table></div>
         <div className="directory-footer"><span>Showing {visibleMembers.length} of {members.length} member{members.length === 1 ? "" : "s"}</span><button className="text-button" type="button" onClick={onReload} disabled={loading}><RefreshCw size={13} />Refresh members</button></div>
       </section>
-      {memberToEdit && <MemberDialog key={memberToEdit.id} member={memberToEdit} onClose={() => setMemberToEdit(null)} onSave={saveMember} />}
+      {memberToEdit && <MemberDialog key={memberToEdit.id} member={memberToEdit} onClose={() => setMemberToEdit(null)} onSave={saveMember} onViewDocument={onViewDocument} />}
     </>
   );
 }
@@ -473,6 +499,23 @@ function AdminPage() {
     return result;
   }
 
+  async function viewMemberDocument(id, documentType) {
+    const viewer = window.open("about:blank", "_blank");
+    if (!viewer) {
+      throw new Error("Allow pop-ups for this site to view the document.");
+    }
+    viewer.opener = null;
+    try {
+      const blob = await getAdminMemberDocument(id, documentType);
+      const objectUrl = URL.createObjectURL(blob);
+      viewer.location.href = objectUrl;
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (error) {
+      viewer.close();
+      throw error;
+    }
+  }
+
   async function handleSignOut() {
     try {
       await signOutAdmin();
@@ -533,6 +576,7 @@ function AdminPage() {
                 onReload={reload}
                 onSave={saveMember}
                 onDelete={removeMember}
+                onViewDocument={viewMemberDocument}
                 onExport={exportAdminMembersCsv}
               />
             ) : (

@@ -323,6 +323,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .member-form-grid input, .member-form-grid select { width: 100%; min-height: 42px; padding: 9px 11px; border: 1px solid #d9ddcf; outline: 0; background: #fffef9; color: var(--ink); font: 12px var(--font-body); }
 .member-form-grid input:focus, .member-form-grid select:focus { border-color: #68836d; box-shadow: 0 0 0 3px rgba(54,103,73,.1); }
 .member-document-summary { margin: 0; color: #69766b; font-size: 10px; line-height: 1.6; text-transform: capitalize; }
+.member-documents { display: grid; gap: 9px; padding: 13px; border: 1px solid #e2e6dc; background: #f5f6f0; }
+.member-documents h3 { margin: 0; color: #42574a; font: 700 12px var(--font-display); }
+.member-document-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+.member-document-actions .button-secondary { min-height: 34px; padding: 0 10px; font-size: 10px; }
+.member-document-actions .button-secondary:disabled { cursor: not-allowed; }
 .member-email { display: block; margin-top: 4px; color: #7b867d; font-size: 10px; }
 .member-table .account-actions { gap: 9px; }
 .dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; padding-bottom: 17px; border-bottom: 1px solid var(--line); }

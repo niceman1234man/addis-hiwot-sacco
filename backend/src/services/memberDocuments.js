@@ -71,3 +71,22 @@ export async function deleteMemberDocument(attachment) {
     throw new Error(`Cloudinary deletion failed: ${result.result}`);
   }
 }
+
+export function getMemberDocumentDownloadUrl(attachment) {
+  ensureConfigured();
+  if (!attachment?.cloudinaryPublicId) {
+    throw new Error("Member document is not available.");
+  }
+  const format = attachment.contentType === "application/pdf"
+    ? "pdf"
+    : attachment.contentType.split("/")[1];
+  return cloudinary.utils.private_download_url(
+    attachment.cloudinaryPublicId,
+    format,
+    {
+      resource_type: attachment.resourceType ?? "raw",
+      type: attachment.deliveryType ?? "authenticated",
+      expires_at: Math.floor(Date.now() / 1000) + 60,
+    },
+  );
+}

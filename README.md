@@ -38,7 +38,8 @@ MongoDB or Cloudinary is unavailable or unconfigured.
 - `/register` — membership application form.
 - `/admin` — administrator dashboard for staff accounts and member applications.
   Admins can review and update member details/application status, permanently
-  delete a member and associated stored documents, and export a member CSV report.
+  delete a member and associated stored documents, securely view submitted
+  national ID documents, photos, and signatures, and export a member CSV report.
   Staff account registration, editing, archiving, restoring, and CSV reports are
   also available here.
 - `/sign-in` — staff email and password sign-in.
