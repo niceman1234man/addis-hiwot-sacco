@@ -15,6 +15,15 @@ The frontend is served on port 5000 and proxies `/api` requests to the Express
 API on port 3001. To run only the API, change to `backend/` and run
 `npm run dev`; this also loads `.env` from the repository root.
 
+## Deploy to Netlify
+
+The root `netlify.toml` builds the Vite app into `dist`, proxies `/api/*` to
+the Express API hosted at `https://addis-hiwot-sacco.onrender.com`, and routes
+other paths to the SPA entry point. Deploy from the repository root. The API
+must also be deployed and configured with its MongoDB and Cloudinary
+environment variables; Netlify hosts only the frontend and does not run the
+Express server.
+
 To accept membership applications, configure `MONGODB_URI` and the three
 Cloudinary credentials (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and
 `CLOUDINARY_API_SECRET`) in the root `.env` file. Application records remain in
