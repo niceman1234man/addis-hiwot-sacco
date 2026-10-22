@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   ArrowDown,
   ArrowRight,
@@ -11,18 +11,13 @@ import {
   HeartHandshake,
   Info,
   Landmark,
-  Menu,
   ShieldCheck,
   Sprout,
   UsersRound,
-  X,
 } from "lucide-react";
-import { createMemberApplication } from "./lib/api.js";
-import AdminPage from "./pages/AdminPage.jsx";
-import {
-  AccountSecurityPage,
-  AdminSignInPage,
-} from "./pages/StaffAuthPages.jsx";
+import { createMemberApplication } from "./api/membersApi.js";
+import AppRoutes from "./routes/AppRoutes.jsx";
+import PublicHeader from "./components/layout/PublicHeader.jsx";
 
 const regions = [
   "Addis Ababa",
@@ -70,41 +65,6 @@ function Brand({ light = false }) {
   );
 }
 
-function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const closeMenu = () => setMenuOpen(false);
-  return (
-    <header className="site-header">
-      <div className="nav-inner">
-        <Brand />
-        <nav className="desktop-nav" aria-label="Main navigation">
-          <a href="/#about">Our cooperative</a>
-          <a href="/#how-it-works">How membership works</a>
-          <Link to="/admin">Staff portal</Link>
-        </nav>
-        <Link to="/register" className="nav-cta">Become a member <ArrowRight size={15} /></Link>
-        <button
-          type="button"
-          className="menu-toggle"
-          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
-        >
-          {menuOpen ? <X size={21} /> : <Menu size={21} />}
-        </button>
-      </div>
-      {menuOpen && (
-        <nav className="mobile-nav" aria-label="Mobile navigation">
-          <a href="/#about" onClick={closeMenu}>Our cooperative</a>
-          <a href="/#how-it-works" onClick={closeMenu}>How membership works</a>
-          <Link to="/admin" onClick={closeMenu}>Staff portal</Link>
-          <Link to="/register" onClick={closeMenu}>Become a member</Link>
-        </nav>
-      )}
-    </header>
-  );
-}
-
 function Footer() {
   return (
     <footer className="site-footer">
@@ -127,7 +87,7 @@ function Footer() {
 function SiteLayout({ children }) {
   return (
     <div className="site-shell">
-      <Header />
+      <PublicHeader />
       {children}
       <Footer />
     </div>
@@ -204,7 +164,7 @@ function HomePage() {
               </div>
               <p>A SACCO is more than a place to save. It is a community choosing to make opportunity more reachable for one another.</p>
             </div>
-            <div className="offer-grid">
+            <div className="offer-grid" id="services">
               <article className="offer-card">
                 <span className="offer-index">01 / SAVE TOGETHER</span>
                 <span className="offer-symbol"><CircleDollarSign size={25} strokeWidth={1.5} /></span>
@@ -286,6 +246,12 @@ function HomePage() {
               <h2>Your next chapter can begin with one small step.</h2>
             </div>
             <Link to="/register" className="button-primary">Apply for membership <ArrowRight size={16} /></Link>
+          </div>
+        </section>
+        <section className="contact-section" id="contact">
+          <div className="page-wrap contact-inner">
+            <div><span className="eyebrow">Get in touch</span><h2>We are here to help you take the next step.</h2><p>Contact the Addis Hiwot team for membership questions and cooperative services.</p></div>
+            <div className="contact-card"><span>ADDIS HIWOT SACCO</span><strong>Visit or speak with our team</strong><p>Addis Ababa, Ethiopia</p><Link to="/register">Ask about membership <ArrowRight size={14} /></Link></div>
           </div>
         </section>
       </main>
@@ -548,14 +514,5 @@ function RegisterPage() {
 }
 
 export default function App() {
-  return (
-    <Routes>
-      <Route path="/" element={<HomePage />} />
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/admin" element={<AdminPage />} />
-      <Route path="/sign-in/*" element={<AdminSignInPage />} />
-      <Route path="/account/*" element={<AccountSecurityPage />} />
-      <Route path="*" element={<HomePage />} />
-    </Routes>
-  );
+  return <AppRoutes HomePage={HomePage} RegisterPage={RegisterPage} />;
 }

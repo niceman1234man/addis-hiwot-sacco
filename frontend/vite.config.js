@@ -12,7 +12,7 @@ export default defineConfig({
     strictPort: true,
     allowedHosts: true,
     proxy: {
-      "/api": "https://addis-hiwot-sacco.onrender.com",
+      "/api": "http://localhost:3001",
     },
   },
   build: {

@@ -22,8 +22,8 @@ const userSchema = new mongoose.Schema(
     sessionExpiresAt: { type: Date, default: null, select: false },
     role: {
       type: String,
-      enum: ["admin", "staff"],
-      default: "staff",
+      enum: ["admin", "manager", "accountant", "cashier", "staff"],
+      default: "cashier",
       required: true,
     },
     status: {
@@ -46,6 +46,8 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+userSchema.index({ role: 1, status: 1 });
 
 const User = mongoose.model("User", userSchema);
 

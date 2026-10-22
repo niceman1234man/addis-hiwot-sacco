@@ -14,7 +14,7 @@
 
 - `frontend/` contains the React/Vite app and Tailwind CSS.
 - `backend/src/models/`, `backend/src/controllers/`, and
-  `backend/src/routers/` separate database models, request handling, and API
+  `backend/src/routes/` separate database models, request handling, and API
   routes.
 - Staff accounts (`User`) and member applications (`MemberApplication`) are
   separate models. Staff passwords are hashed with Node.js scrypt and are

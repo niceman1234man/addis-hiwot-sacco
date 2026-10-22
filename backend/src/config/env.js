@@ -1,0 +1,7 @@
+import "dotenv/config";
+
+export const env = {
+  port: Number(process.env.PORT) || 3001,
+  mongoUri: process.env.MONGODB_URI || "",
+  nodeEnv: process.env.NODE_ENV || "development",
+};
