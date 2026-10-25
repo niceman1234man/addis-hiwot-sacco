@@ -9,3 +9,5 @@ export const getAdminSession = () => api.get("/auth/session");
 export const signInAdmin = (credentials) => api.post("/auth/login", credentials);
 export const signOutAdmin = () => api.delete("/auth/logout");
 export const changeAdminPassword = (passwords) => api.patch("/auth/password", passwords);
+export const requestAdminPasswordReset = (email) => api.post("/auth/password/forgot", { email });
+export const resetAdminPassword = (data) => api.post("/auth/password/reset", data);

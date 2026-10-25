@@ -88,6 +88,8 @@ posting endpoints return an error without applying a partial update.
 - `POST /api/v1/auth/login`, `GET /api/v1/auth/session`,
   `DELETE /api/v1/auth/logout`, and `PATCH /api/v1/auth/password` — staff
   authentication and password management.
+- `POST /api/v1/auth/password/forgot` and `POST /api/v1/auth/password/reset` —
+  rate-limited staff password recovery with single-use, expiring email tokens.
 - `/api/v1/users` — administrator-only user management.
 - `/api/v1/members` — public application submission and administrator-only
   member application administration.
@@ -108,5 +110,10 @@ never stored. Add `MONGODB_URI`, then run `npm run admin:bootstrap` to create
 the first administrator or reset that administrator's password. An active
 administrator can register staff or additional administrators in `/admin` by
 setting their initial passwords. Account holders can change their passwords
-after signing in. Password recovery requires an administrator to set a new
-password from the staff directory because no email service is configured.
+after signing in. Self-service recovery is available at `/forgot-password`.
+Configure `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and
+`FRONTEND_URL` in the backend environment to deliver reset links. `SMTP_FROM`
+is optional and defaults to `SMTP_USER`. Tokens are stored only as hashes,
+expire after 30 minutes, and are single-use. Recovery responses do not reveal
+whether an email has an account. SMTP must be configured before enabling this
+feature in production.

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, KeyRound } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { changeAdminPassword, getAdminSession, signInAdmin } from "../../api/authApi.js";
 import PublicHeader from "../../components/layout/PublicHeader.jsx";
 import logo from "../../assets/logo.jpg";
@@ -30,10 +30,12 @@ function AuthPage({ children, backTo = "/" }) {
 
 export function AdminSignInPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState(() => searchParams.get("passwordReset") === "success" ? "Password reset successfully. Sign in with your new password." : "");
 
   async function submit(event) {
     event.preventDefault();
@@ -82,11 +84,13 @@ export function AdminSignInPage() {
             maxLength={128}
           />
         </label>
+        <div className="auth-forgot-link"><Link to="/forgot-password">Forgot password?</Link></div>
         {error && <div className="form-error" role="alert">{error}</div>}
         <button className="button-primary auth-submit" type="submit" disabled={submitting}>
           {submitting ? "Signing in…" : "Sign in"}
         </button>
       </form>
+      {notice && <div className="staff-notice" role="status">{notice}</div>}
     </AuthPage>
   );
 }

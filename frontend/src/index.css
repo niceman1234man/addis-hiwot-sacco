@@ -23,6 +23,14 @@
   --font-body: "DM Sans", "Noto Sans Ethiopic", sans-serif;
 }
 
+html[lang="am"] body,
+html[lang="am"] button,
+html[lang="am"] input,
+html[lang="am"] textarea,
+html[lang="am"] select {
+  font-family: "Noto Sans Ethiopic", "DM Sans", sans-serif;
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; background: var(--paper); color: var(--ink); }
@@ -31,6 +39,10 @@ button, a { -webkit-tap-highlight-color: transparent; }
 ::selection { background: #e4c96f; color: var(--forest-dark); }
 
 .site-shell { @apply min-h-dvh overflow-hidden; }
+.language-toggle { min-width: 42px; min-height: 36px; padding: 0 10px; border: 1px solid rgba(255,255,255,.42); border-radius: 4px; background: transparent; color: inherit; font: 700 12px var(--font-body); cursor: pointer; }
+.language-toggle:hover { background: rgba(255,255,255,.12); }
+.workspace-topbar .language-toggle { border-color: #dce4da; color: #365343; }
+.workspace-topbar .language-toggle:hover { background: #edf3eb; }
 .font-display { font-family: var(--font-display); }
 .font-body { font-family: var(--font-body); }
 .eyebrow { color: var(--rust); font-size: .7rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
@@ -61,7 +73,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .hero-copy { padding: 22px 0 30px; animation: enter .65s both; }
 .hero-copy .eyebrow { display: inline-flex; align-items: center; gap: 11px; }
 .hero-copy .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--rust); }
-.hero h1 { max-width: 620px; margin: 24px 0 20px; font: 600 clamp(3rem, 6.2vw, 5.9rem)/1.05 var(--font-display); letter-spacing: -.065em; }
+.hero h1 { max-width: 620px; margin: 24px 0 20px; font: 600 clamp(1.5rem, 3.1vw, 2.95rem)/1.1 var(--font-display); letter-spacing: -.045em; }
 .hero h1 em { color: var(--forest); font-style: normal; }
 .hero-ethiopic { display: block; margin-top: 8px; color: var(--rust); font-family: "Noto Sans Ethiopic", sans-serif; font-size: clamp(1.45rem, 2.5vw, 2rem); font-weight: 500; letter-spacing: 0; line-height: 1.35; }
 .hero-copy > p { max-width: 465px; color: #647269; font-size: 16px; line-height: 1.8; }
@@ -362,7 +374,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .hero { padding: 47px 0 62px; }
   .hero-grid { grid-template-columns: 1fr; gap: 29px; }
   .hero-copy { padding: 4px 0 0; }
-  .hero h1 { max-width: 520px; margin-top: 18px; font-size: clamp(3rem,13vw,4.6rem); }
+  .hero h1 { max-width: 520px; margin-top: 18px; font-size: clamp(1.5rem,6.5vw,2.3rem); }
   .hero-copy > p { max-width: 500px; font-size: 14px; }
   .hero-note { margin-top: 27px; }
   .hero-art { min-height: unset; margin: 0 7px 9px; }
@@ -514,6 +526,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .account-checkbox input { width: 16px; height: 16px; accent-color: #27a567; }
 .account-row-actions { display: flex; align-items: center; gap: 10px; }
 .account-row-actions .text-button { white-space: nowrap; }
+.chart-setup-actions { display: grid; gap: 8px; margin: 10px 0 18px; padding: 15px 18px; border: 1px solid #dfe7dd; background: #f7faf5; }
+.chart-template-actions { align-items: center; margin: 0; padding: 0; border: 0; background: transparent; }
+.chart-template-actions span { max-width: 760px; color: #718074; font-size: 10px; line-height: 1.55; }
 .delete-account-button { color: #a44737; }
 .member-review-actions { display: flex; align-items: center; gap: 7px; }
 .member-review-actions .button-primary, .member-review-actions .button-secondary { min-height: 32px; padding: 0 9px; font-size: 10px; white-space: nowrap; }

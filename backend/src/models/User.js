@@ -18,6 +18,8 @@ const userSchema = new mongoose.Schema(
     },
     passwordHash: { type: String, select: false },
     passwordSalt: { type: String, select: false },
+    passwordResetTokenHash: { type: String, default: null, select: false },
+    passwordResetExpiresAt: { type: Date, default: null, select: false },
     sessionTokenHash: { type: String, default: null, select: false },
     sessionExpiresAt: { type: Date, default: null, select: false },
     role: {

@@ -8,6 +8,8 @@ export default function ChartOfAccounts({ readOnly = false }) {
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [templateLoading, setTemplateLoading] = useState(false);
+  const [mappingTemplateLoading, setMappingTemplateLoading] = useState(false);
   const [editingId, setEditingId] = useState("");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
@@ -100,6 +102,40 @@ export default function ChartOfAccounts({ readOnly = false }) {
     }
   }
 
+  async function createExampleChart() {
+    const confirmed = window.confirm("Create the sample SACCO chart (1000–5002)? Existing accounts will not be overwritten. System mappings are configured separately after the chart is created.");
+    if (!confirmed) return;
+    setTemplateLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await accountingApi.createExampleChart();
+      setNotice(result.message || "Starter chart created. Configure system account mappings next.");
+      await loadAccounts();
+    } catch (templateError) {
+      setError(templateError.message || "The sample chart could not be created. No partial accounts were saved.");
+    } finally {
+      setTemplateLoading(false);
+    }
+  }
+
+  async function configureExampleMappings() {
+    const confirmed = window.confirm("Configure sample mappings to 1101 Cash, 1102 Bank, 1103 Mobile Money, 2001 Savings, 3001 Share Capital, 1201 Loan Receivable, 4001 Interest Income, 4002 Fees, and 5002 Office Rent? Existing mappings will not be overwritten.");
+    if (!confirmed) return;
+    setMappingTemplateLoading(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await accountingApi.configureExampleMappings();
+      const skippedSummary = result.skipped?.length ? ` ${result.skipped.length} mapping(s) left unchanged; review Admin → System account mappings.` : "";
+      setNotice(`${result.message || "Sample system mappings configured."}${skippedSummary}`);
+    } catch (mappingError) {
+      setError(mappingError.message || "Sample mappings could not be configured.");
+    } finally {
+      setMappingTemplateLoading(false);
+    }
+  }
+
   const visibleAccounts = accounts.filter((account) => {
     const matchesSearch = `${account.code} ${account.name} ${account.subcategory || ""}`.toLowerCase().includes(search.trim().toLowerCase());
     return matchesSearch
@@ -124,6 +160,7 @@ export default function ChartOfAccounts({ readOnly = false }) {
     <div className="workspace-warning">Four-digit account codes use the first digit for classification: 1 Assets, 2 Liabilities, 3 Equity, 4 Income, 5 Expenses. Parent/group accounts organize the chart and cannot receive postings; child accounts hold ledger balances.</div>
     {error && <p className="workspace-feedback workspace-feedback-error" role="alert">{error}</p>}
     {notice && <p className="workspace-feedback" role="status">{notice}</p>}
+    {!readOnly && <div className="chart-setup-actions"><div className="workspace-form-actions chart-template-actions"><button className="button-secondary" type="button" onClick={createExampleChart} disabled={templateLoading || loading}>{templateLoading ? "Creating sample chart…" : "Create sample SACCO chart"}</button><span>Creates the example parent groups and posting accounts for assets, liabilities, equity, income, and expenses. Existing accounts are never overwritten.</span></div><div className="workspace-form-actions chart-template-actions"><button className="button-secondary" type="button" onClick={configureExampleMappings} disabled={mappingTemplateLoading || loading}>{mappingTemplateLoading ? "Configuring sample mappings…" : "Configure sample system mappings"}</button><span>After the chart exists, maps cash 1101, bank 1102, mobile money 1103, savings 2001, share capital 3001, loan 1201, interest 4001, fees 4002, and default expense 5002. Existing mappings are never overwritten.</span></div></div>}
     {!readOnly && <form className="workspace-form account-create-form" onSubmit={createAccount}>
       <h2>{editingId ? "Edit account" : "Create account"}</h2>
       <div className="workspace-fields">

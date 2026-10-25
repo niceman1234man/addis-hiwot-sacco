@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ArrowRight, Menu, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from "../../assets/logo.jpg";
+import { LanguageToggle } from "../../i18n/LanguageContext.jsx";
 
 function PublicBrand() {
   return <Link to="/" className="brand" aria-label="Addis Hiwot SACCO home">
@@ -25,6 +26,7 @@ export default function PublicHeader() {
         <Link to="/admin" className="nav-staff-link">Staff portal</Link>
         <Link to="/register" className="nav-cta">Become a member <ArrowRight size={15} /></Link>
       </div>
+      <LanguageToggle />
       <button type="button" className="menu-toggle" aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"} aria-expanded={menuOpen} onClick={() => setMenuOpen((open) => !open)}>
         {menuOpen ? <X size={21} /> : <Menu size={21} />}
       </button>

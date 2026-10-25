@@ -49,6 +49,147 @@ const mappingDefinitions = [
 	{ key: "loan_impairment", label: "Loan impairment expense or allowance", category: "expense", normalBalance: "debit" },
 	{ key: "expense", label: "Default operating expense", category: "expense", normalBalance: "debit" },
 ];
+const exampleChartAccounts = [
+	{ code: "1000", name: "Assets", category: "asset", accountType: "group", normalBalance: "debit" },
+	{ code: "1100", name: "Cash and Cash Equivalents", category: "asset", accountType: "group", normalBalance: "debit", parentCode: "1000" },
+	{ code: "2000", name: "Liabilities", category: "liability", accountType: "group", normalBalance: "credit" },
+	{ code: "3000", name: "Equity", category: "equity", accountType: "group", normalBalance: "credit" },
+	{ code: "4000", name: "Income", category: "income", accountType: "group", normalBalance: "credit" },
+	{ code: "5000", name: "Expenses", category: "expense", accountType: "group", normalBalance: "debit" },
+	{ code: "1101", name: "Cash on Hand", category: "asset", accountType: "posting", normalBalance: "debit", parentCode: "1100" },
+	{ code: "1102", name: "Bank Account", category: "asset", accountType: "posting", normalBalance: "debit", parentCode: "1100" },
+	{ code: "1103", name: "Mobile Money Account", category: "asset", accountType: "posting", normalBalance: "debit", parentCode: "1100" },
+	{ code: "1201", name: "Loan Principal Receivable", category: "asset", accountType: "posting", normalBalance: "debit", parentCode: "1000" },
+	{ code: "2001", name: "Members' Savings Deposits", category: "liability", accountType: "posting", normalBalance: "credit", parentCode: "2000" },
+	{ code: "3001", name: "Members' Share Capital", category: "equity", accountType: "posting", normalBalance: "credit", parentCode: "3000" },
+	{ code: "4001", name: "Loan Interest Income", category: "income", accountType: "posting", normalBalance: "credit", parentCode: "4000" },
+	{ code: "4002", name: "Loan Processing Fee Income", category: "income", accountType: "posting", normalBalance: "credit", parentCode: "4000" },
+	{ code: "5001", name: "Salaries Expense", category: "expense", accountType: "posting", normalBalance: "debit", parentCode: "5000" },
+	{ code: "5002", name: "Office Rent Expense", category: "expense", accountType: "posting", normalBalance: "debit", parentCode: "5000" },
+];
+
+export async function createExampleChartOfAccounts(request, response) {
+	try {
+		const result = await runFinancialTransaction(async (session) => {
+			const byCode = new Map();
+			const created = [];
+			const existing = [];
+			for (const definition of exampleChartAccounts) {
+				const current = await Account.findOne({ code: definition.code }).session(session);
+				if (current) {
+					const inferredType = current.accountType || (current.allowManualPosting === false ? "group" : "posting");
+					if (current.category !== definition.category || current.normalBalance !== definition.normalBalance || current.currency !== "ETB" || inferredType !== definition.accountType) {
+						throw operationalError(409, `Account code ${definition.code} already exists with a different category, normal balance, currency, or account type. No example accounts were created.`);
+					}
+					const expectedParent = definition.parentCode ? byCode.get(definition.parentCode) : null;
+					if (String(current.parent || "") !== String(expectedParent?._id || "")) throw operationalError(409, `Account code ${definition.code} already exists with a different parent. No example accounts were created.`);
+					byCode.set(definition.code, current);
+					existing.push(definition.code);
+					continue;
+				}
+				const parent = definition.parentCode ? byCode.get(definition.parentCode) : null;
+				if (definition.parentCode && !parent) throw operationalError(409, `Parent account ${definition.parentCode} must be created before ${definition.code}.`);
+				const [account] = await Account.create([{
+					code: definition.code,
+					name: definition.name,
+					category: definition.category,
+					accountType: definition.accountType,
+					normalBalance: definition.normalBalance,
+					currency: "ETB",
+					parent: parent?._id || null,
+					allowManualPosting: definition.accountType === "posting",
+					isActive: true,
+					createdBy: request.adminUser._id,
+					updatedBy: request.adminUser._id,
+				}], { session });
+				byCode.set(definition.code, account);
+				created.push(definition.code);
+				if (parent) {
+					parent.accountType = "group";
+					parent.allowManualPosting = false;
+					parent.updatedBy = request.adminUser._id;
+					await parent.save({ session });
+				}
+				await AuditLog.create([{
+					actor: request.adminUser._id,
+					actorRole: request.adminUser.role,
+					action: "accounting.account.created",
+					resourceType: "Account",
+					resourceId: account._id,
+					outcome: "success",
+					details: { code: account.code, category: account.category, accountType: account.accountType, parent: account.parent || null, template: "sacco_starter_chart" },
+				}], { session });
+			}
+			return { created, existing };
+		});
+		return response.status(201).json({ message: `Starter chart ready: ${result.created.length} created, ${result.existing.length} already existed. Configure system mappings next.`, ...result });
+	} catch (error) {
+		return response.status(error.status || (error.code === 11000 ? 409 : 500)).json({ message: error.message || "Starter chart could not be created." });
+	}
+}
+
+export async function configureExampleSystemMappings(request, response) {
+	const exampleMappingCodes = {
+		cash: "1101",
+		bank: "1102",
+		mobile_money: "1103",
+		savings: "2001",
+		share_capital: "3001",
+		loan_receivable: "1201",
+		interest_income: "4001",
+		fees_income: "4002",
+		expense: "5002",
+	};
+	try {
+		const result = await runFinancialTransaction(async (session) => {
+			const configured = [];
+			const skipped = [];
+			for (const [key, code] of Object.entries(exampleMappingCodes)) {
+				const definition = mappingDefinitions.find((item) => item.key === key);
+				const account = await Account.findOne({ code, currency: "ETB", category: definition.category, normalBalance: definition.normalBalance, isActive: true }).session(session);
+				if (!account || account.accountType === "group" || await Account.exists({ parent: account._id }).session(session)) {
+					skipped.push({ key, code, reason: "Matching active posting account was not found." });
+					continue;
+				}
+				const savedMapping = await SystemAccountMapping.findOne({ key }).session(session);
+				if (savedMapping) {
+					skipped.push({ key, code, reason: `Mapping already exists (${savedMapping.account}).` });
+					continue;
+				}
+				const legacyAccount = await Account.findOne({ systemKey: key }).session(session);
+				const environmentSetting = accountMappingEnvironmentByKey[key];
+				if (legacyAccount || (environmentSetting && process.env[environmentSetting])) {
+					skipped.push({ key, code, reason: "Legacy system/environment mapping exists; no changes were made." });
+					continue;
+				}
+				const duplicate = await SystemAccountMapping.findOne({ account: account._id }).session(session);
+				if (duplicate) {
+					skipped.push({ key, code, reason: `Account is already assigned to ${duplicate.key}.` });
+					continue;
+				}
+				const [mapping] = await SystemAccountMapping.create([{
+					key,
+					account: account._id,
+					updatedBy: request.adminUser._id,
+				}], { session });
+				await AuditLog.create([{
+					actor: request.adminUser._id,
+					actorRole: request.adminUser.role,
+					action: "accounting.system_mapping.updated",
+					resourceType: "SystemAccountMapping",
+					resourceId: mapping._id,
+					outcome: "success",
+					details: { key, account: account._id, code: account.code, template: "sacco_starter_chart" },
+				}], { session });
+				configured.push({ key, code });
+			}
+			return { configured, skipped };
+		});
+		return response.json({ message: `${result.configured.length} sample mappings configured; ${result.skipped.length} left unchanged.`, ...result });
+	} catch (error) {
+		return response.status(error.status || (error.code === 11000 ? 409 : 500)).json({ message: error.message || "Sample system mappings could not be configured." });
+	}
+}
 
 export async function listSystemAccountMappings(_request, response) {
 	try {

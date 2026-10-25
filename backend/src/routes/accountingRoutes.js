@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createAccount, createExpense, createJournal, decideExpense, deleteAccount, listAccounts, listExpenses, listJournals, listSystemAccountMappings, payExpense, removeSystemAccountMapping, updateAccount, updateSystemAccountMapping } from "../controllers/accountingController.js";
+import { configureExampleSystemMappings, createAccount, createExampleChartOfAccounts, createExpense, createJournal, decideExpense, deleteAccount, listAccounts, listExpenses, listJournals, listSystemAccountMappings, payExpense, removeSystemAccountMapping, updateAccount, updateSystemAccountMapping } from "../controllers/accountingController.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 
@@ -7,6 +7,8 @@ const routes = Router();
 routes.use(authenticate);
 routes.get("/accounts", allowRoles("admin", "accountant"), listAccounts);
 routes.post("/accounts", allowRoles("admin"), createAccount);
+routes.post("/accounts/example-chart", allowRoles("admin"), createExampleChartOfAccounts);
+routes.post("/system-mappings/example-chart", allowRoles("admin"), configureExampleSystemMappings);
 routes.patch("/accounts/:id", allowRoles("admin"), updateAccount);
 routes.delete("/accounts/:id", allowRoles("admin"), deleteAccount);
 routes.get("/system-mappings", allowRoles("admin"), listSystemAccountMappings);

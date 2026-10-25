@@ -5,6 +5,7 @@ import { buildMonthlyAmortizationSchedule, calculateAmortizedPaymentMinor } from
 import { validateBalancedJournalLines, buildJournalLines } from "../src/services/accountingService.js";
 import { createTransactionDraft, assertTransactionTransition } from "../src/services/transactionService.js";
 import { summarizeJournalLedger, summarizeTransactions } from "../src/services/reportService.js";
+import { createPasswordResetToken, hashPasswordResetToken, PASSWORD_RESET_TTL_MS } from "../src/services/passwordResetTokens.js";
 import { validateLoan } from "../src/validators/loanValidator.js";
 import { validateTransaction } from "../src/validators/transactionValidator.js";
 import mongoose from "mongoose";
@@ -116,4 +117,16 @@ test("savings account model checks integer and available balance invariants", as
     availableBalanceMinor: 101,
   });
   await assert.rejects(account.validate(), /Available balance cannot exceed/);
+});
+
+test("password reset tokens are random, hashed for storage, and expire after the configured lifetime", () => {
+  const first = createPasswordResetToken();
+  const second = createPasswordResetToken();
+  assert.match(first.token, /^[\da-f]{64}$/);
+  assert.match(first.tokenHash, /^[\da-f]{64}$/);
+  assert.notEqual(first.token, first.tokenHash);
+  assert.notEqual(first.token, second.token);
+  assert.equal(hashPasswordResetToken(first.token), first.tokenHash);
+  assert.ok(first.expiresAt.getTime() >= Date.now() + PASSWORD_RESET_TTL_MS - 1000);
+  assert.ok(first.expiresAt.getTime() <= Date.now() + PASSWORD_RESET_TTL_MS + 1000);
 });
