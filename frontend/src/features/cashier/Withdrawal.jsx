@@ -20,7 +20,7 @@ export default function Withdrawal() {
     }));
 
   return <FinanceForm title="Record a withdrawal" description="Select an active member savings account and verify identity before paying out." submitLabel="Post withdrawal" warning={error || (loading ? "Loading eligible members and active savings accounts…" : "Withdrawals reduce the member balance and post against the savings liability and selected settlement account. Cash payouts require an open cashier session.")} fields={[
-    { name: "memberId", label: "Member", type: "select", required: true, disabled: loading, options: memberOptions, onChange: (value) => { setSelectedMember(value); return { savingsAccountId: "" }; } },
+    { name: "memberId", label: "Member", type: "select", required: true, disabled: loading || !members.some((member) => member.eligible), options: memberOptions.map((option) => ({ ...option, disabled: !members.find((member) => member.id === option.value)?.eligible })), onChange: (value) => { setSelectedMember(value); return { savingsAccountId: "" }; } },
     { name: "savingsAccountId", label: "Active savings account", type: "select", required: true, disabled: loading || !selectedMember || savingsOptions.length === 0, options: savingsOptions, help: selectedMember && savingsOptions.length === 0 ? "This member has no active savings accounts." : "The available balance is shown; overdrafts are rejected by the server." },
     { name: "amount", label: "Amount (ETB)", type: "number", min: "0.01", step: "0.01", required: true },
     { name: "paymentMethod", label: "Payout method", type: "select", required: true, options: [{ value: "cash", label: "Cash" }, { value: "bank_transfer", label: "Bank transfer" }, { value: "mobile_money", label: "Mobile money" }] },

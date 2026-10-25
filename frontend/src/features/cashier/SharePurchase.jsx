@@ -28,7 +28,7 @@ export default function SharePurchase() {
     submitLabel="Post share purchase"
     warning={error || (loading ? "Loading eligible members…" : "The server posts cash/bank/mobile money against the configured members' share-capital equity account and records a receipt and journal atomically. Cash purchases require an open cashier session.")}
     fields={[
-      { name: "memberId", label: "Member", type: "select", required: true, disabled: loading, options: memberOptions },
+      { name: "memberId", label: "Member", type: "select", required: true, disabled: loading || !members.some((member) => member.eligible), options: memberOptions.map((option) => ({ ...option, disabled: !members.find((member) => member.id === option.value)?.eligible })) },
       { name: "amount", label: "Purchase amount (ETB)", type: "number", min: "0.01", step: "0.01", required: true },
       { name: "paymentMethod", label: "Payment method", type: "select", required: true, options: [{ value: "cash", label: "Cash" }, { value: "bank_transfer", label: "Bank transfer" }, { value: "mobile_money", label: "Mobile money" }] },
       { name: "description", label: "Notes", type: "textarea", wide: true, maxLength: 500 },

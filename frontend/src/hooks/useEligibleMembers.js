@@ -17,8 +17,9 @@ export function useEligibleMembers() {
 
   const options = members.map((member) => ({
     value: member.id,
-    label: `${member.memberNumber ? `${member.memberNumber} · ` : ""}${[member.firstName, member.middleName, member.lastName].filter(Boolean).join(" ")}`,
+    label: `${member.memberNumber ? `${member.memberNumber} · ` : ""}${[member.firstName, member.middleName, member.lastName].filter(Boolean).join(" ")}${member.eligible ? "" : " · Pending approval"}`,
+    disabled: !member.eligible,
   }));
 
-  return { members, options, loading, error };
+  return { members, options, eligibleCount: members.filter((member) => member.eligible).length, loading, error };
 }

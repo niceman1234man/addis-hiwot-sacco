@@ -142,8 +142,11 @@ export async function listSavings(request, response) {
 
 export async function listEligibleMembers(_request, response) {
 	try {
-		const members = await Member.find({ $or: [{ status: "approved" }, { membershipStatus: "active" }] })
-			.select("firstName middleName lastName memberNumber")
+		const members = await Member.find({
+			status: { $ne: "rejected" },
+			membershipStatus: { $nin: ["rejected", "suspended", "exited"] },
+		})
+			.select("firstName middleName lastName memberNumber status membershipStatus")
 			.sort({ lastName: 1, firstName: 1 })
 			.lean();
 		return response.json({ members: members.map((member) => ({
@@ -152,6 +155,8 @@ export async function listEligibleMembers(_request, response) {
 			middleName: member.middleName,
 			lastName: member.lastName,
 			memberNumber: member.memberNumber || "",
+			status: member.membershipStatus === "active" || member.status === "approved" ? "active" : "pending",
+			eligible: member.membershipStatus === "active" || member.status === "approved",
 		})) });
 	} catch (error) {
 		console.error("Unable to load eligible savings members:", error.message);

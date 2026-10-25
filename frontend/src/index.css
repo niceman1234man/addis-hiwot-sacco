@@ -514,6 +514,11 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .account-checkbox input { width: 16px; height: 16px; accent-color: #27a567; }
 .account-row-actions { display: flex; align-items: center; gap: 10px; }
 .account-row-actions .text-button { white-space: nowrap; }
+.member-review-actions { display: flex; align-items: center; gap: 7px; }
+.member-review-actions .button-primary, .member-review-actions .button-secondary { min-height: 32px; padding: 0 9px; font-size: 10px; white-space: nowrap; }
+.member-approve-button { background: #27a567; }
+.member-approve-button:hover { background: #1d8552; }
+.member-reject-button { border-color: #e4cfc7; color: #96543f; }
 .account-tree-name { display: inline-block; padding-left: calc(var(--account-depth, 0) * 18px); }
 .account-tree-name.is-group { color: #294b37; font-weight: 800; }
 .journal-register-heading { margin-top: 38px; padding-top: 24px; border-top: 1px solid #e5eae2; }

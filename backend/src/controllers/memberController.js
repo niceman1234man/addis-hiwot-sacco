@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import MemberApplication from "../models/Member.js";
+import AuditLog from "../models/AuditLog.js";
 import {
   cloudinaryConfigured,
   deleteMemberDocument,
@@ -164,7 +165,23 @@ export async function updateMember(request, response) {
   }
   if (body.status !== undefined) {
     if (!memberStatuses.has(body.status)) return response.status(400).json({ message: "Choose pending, approved, or rejected status." });
+    const previousStatus = member.status;
     member.status = body.status;
+    if (body.status === "approved") {
+      member.approvedAt = new Date();
+      member.approvedBy = request.adminUser._id;
+      member.membershipStatus = "active";
+      member.memberSince ??= member.approvedAt;
+    } else if (body.status === "rejected") {
+      member.approvedAt = null;
+      member.approvedBy = null;
+      member.membershipStatus = "rejected";
+    } else {
+      member.approvedAt = null;
+      member.approvedBy = null;
+      member.membershipStatus = "applicant";
+    }
+    member.$locals.previousStatus = previousStatus;
   }
   if (body.addressInformation !== undefined) {
     if (!body.addressInformation || typeof body.addressInformation !== "object" || Array.isArray(body.addressInformation)) return response.status(400).json({ message: "Enter valid address information." });
@@ -176,6 +193,17 @@ export async function updateMember(request, response) {
   }
   try {
     await member.save();
+    if (body.status !== undefined) {
+      await AuditLog.create({
+        actor: request.adminUser._id,
+        actorRole: request.adminUser.role,
+        action: `member.application.${body.status}`,
+        resourceType: "Member",
+        resourceId: member._id,
+        outcome: "success",
+        details: { fromStatus: member.$locals.previousStatus, toStatus: member.status, memberNumber: member.memberNumber || null },
+      });
+    }
     return response.json({ member: publicMember(member), message: "Member updated." });
   } catch (error) {
     if (error instanceof mongoose.Error.ValidationError) return response.status(400).json({ message: Object.values(error.errors).map((item) => item.message).join(" ") });

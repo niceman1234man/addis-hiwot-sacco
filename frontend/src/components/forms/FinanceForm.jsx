@@ -45,7 +45,7 @@ export default function FinanceForm({ title, description, fields, submitLabel = 
               {field.type === "select" ? (
                 <select value={values[field.name]} onChange={(event) => handleFieldChange(field, event.target.value)} required={field.required} disabled={field.disabled}>
                   <option value="" disabled>Select {field.label.toLowerCase()}</option>
-                  {field.options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+                  {field.options.map((option) => <option value={option.value} key={option.value} disabled={option.disabled}>{option.label}</option>)}
                 </select>
               ) : field.type === "textarea" ? (
                 <textarea value={values[field.name]} onChange={(event) => setValue(field.name, event.target.value)} required={field.required} maxLength={field.maxLength ?? 500} rows={4} />
