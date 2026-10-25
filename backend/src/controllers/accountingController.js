@@ -303,6 +303,7 @@ export async function updateAccount(request, response) {
 			}
 			if (body.normalBalance !== undefined) {
 				if (!["debit", "credit"].includes(body.normalBalance)) throw operationalError(400, "Normal balance must be debit or credit.");
+				if (body.normalBalance !== current.normalBalance && (current.systemKey || isEnvironmentMapped || isPersistentlyMapped)) throw operationalError(409, "The normal balance of a system-mapped account cannot change. Assign a correctly configured posting account instead.");
 				current.normalBalance = body.normalBalance;
 			}
 			if (body.accountType !== undefined) {
@@ -343,6 +344,37 @@ export async function updateAccount(request, response) {
 		return response.json({ message: "Account updated.", account });
 	} catch (error) {
 		return response.status(error.status || 500).json({ message: error.message || "Account could not be updated." });
+	}
+}
+
+export async function deleteAccount(request, response) {
+	if (!mongoose.isValidObjectId(request.params.id)) return response.status(400).json({ message: "Account ID is invalid." });
+	try {
+		const removed = await runFinancialTransaction(async (session) => {
+			const account = await Account.findById(request.params.id).session(session);
+			if (!account) throw operationalError(404, "Account was not found.");
+			if (account.isSystem || account.systemKey || accountMappingEnvironmentKeys.some((key) => process.env[key] && String(account._id) === process.env[key])) {
+				throw operationalError(409, "System posting accounts cannot be deleted. Reassign the mapping and deactivate it instead.");
+			}
+			if (await SystemAccountMapping.exists({ account: account._id }).session(session)) throw operationalError(409, "This account is assigned to a system mapping. Reassign the mapping and deactivate it instead.");
+			if (await Account.exists({ parent: account._id }).session(session)) throw operationalError(409, "An account with child accounts cannot be deleted. Move or delete its children first.");
+			if (await JournalEntry.exists({ "lines.account": account._id }).session(session)) throw operationalError(409, "This account has journal history and cannot be deleted. Deactivate it instead to preserve the audit trail.");
+			if (await Expense.exists({ account: account._id }).session(session)) throw operationalError(409, "This account is referenced by expense records and cannot be deleted. Deactivate it instead.");
+			await AuditLog.create([{
+				actor: request.adminUser._id,
+				actorRole: request.adminUser.role,
+				action: "accounting.account.deleted",
+				resourceType: "Account",
+				resourceId: account._id,
+				outcome: "success",
+				details: { code: account.code, name: account.name, category: account.category },
+			}], { session });
+			await account.deleteOne({ session });
+			return { code: account.code };
+		});
+		return response.json({ message: `Account ${removed.code} deleted.` });
+	} catch (error) {
+		return response.status(error.status || 500).json({ message: error.message || "Account could not be deleted." });
 	}
 }
 
