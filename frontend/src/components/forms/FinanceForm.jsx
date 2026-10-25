@@ -34,7 +34,7 @@ export default function FinanceForm({ title, description, fields, submitLabel = 
     <section className="workspace-panel">
       <div className="workspace-panel-heading">
         <div><p className="workspace-kicker">SACCO operations</p><h1>{title}</h1><p>{description}</p></div>
-        <span className="workspace-status">Preview mode</span>
+        <span className="workspace-status">Protected API</span>
       </div>
       <div className="workspace-warning" role="note">{warning}</div>
       <form className="workspace-form" onSubmit={submit}>
@@ -60,7 +60,7 @@ export default function FinanceForm({ title, description, fields, submitLabel = 
         {message && <p className="workspace-feedback" role="status">{message}</p>}
         <div className="workspace-form-actions">
           <button className="button-primary" type="submit" disabled={busy}>{busy ? "Sending…" : submitLabel}</button>
-          <span>All amounts are entered in ETB; no balance will be changed in preview mode.</span>
+          <span>Requests are validated by the server. Financial balances change only when the transaction is successfully posted.</span>
         </div>
       </form>
     </section>

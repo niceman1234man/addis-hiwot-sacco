@@ -5,7 +5,7 @@ import { allowRoles } from "../middleware/roleMiddleware.js";
 
 const routes = Router();
 routes.use(authenticate);
-routes.get("/", allowRoles("admin", "manager", "accountant"), listLoans);
+routes.get("/", allowRoles("admin", "manager", "accountant", "cashier"), listLoans);
 routes.post("/", allowRoles("admin", "accountant"), createLoan);
 routes.patch("/:id/approve", allowRoles("admin", "manager"), approveLoan);
 routes.post("/:id/disburse", allowRoles("admin", "accountant"), disburseLoan);

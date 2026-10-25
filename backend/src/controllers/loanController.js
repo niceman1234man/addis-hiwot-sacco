@@ -74,8 +74,8 @@ export async function createLoan(request, response) {
 }
 
 export async function listLoans(request, response) {
-	const filter = {};
-	if (request.query.status) {
+	const filter = request.adminUser.role === "cashier" ? { status: "active" } : {};
+	if (request.query.status && request.adminUser.role !== "cashier") {
 		const validStatuses = ["draft", "submitted", "under_review", "approved", "rejected", "disbursed", "active", "paid_off", "defaulted", "cancelled"];
 		if (!validStatuses.includes(request.query.status)) return response.status(400).json({ message: "Loan status is invalid." });
 		filter.status = request.query.status;
@@ -87,6 +87,17 @@ export async function listLoans(request, response) {
 	const limit = Math.min(Math.max(Number.parseInt(request.query.limit, 10) || 50, 1), 100);
 	try {
 		const loans = await Loan.find(filter).sort({ createdAt: -1 }).limit(limit).populate("member", "firstName middleName lastName memberNumber").lean();
+		if (request.adminUser.role === "cashier") {
+			return response.json({ loans: loans.map((loan) => ({
+				_id: loan._id,
+				loanNumber: loan.loanNumber,
+				member: loan.member,
+				currency: loan.currency,
+				outstandingPrincipalMinor: loan.outstandingPrincipalMinor,
+				outstandingInterestMinor: loan.outstandingInterestMinor,
+				status: loan.status,
+			})) });
+		}
 		return response.json({ loans });
 	} catch {
 		return response.status(500).json({ message: "Loans could not be loaded." });

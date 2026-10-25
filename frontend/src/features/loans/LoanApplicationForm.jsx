@@ -1,9 +1,11 @@
 import FinanceForm from "../../components/forms/FinanceForm.jsx";
 import { loansApi } from "../../api/loansApi.js";
+import { useEligibleMembers } from "../../hooks/useEligibleMembers.js";
 
 export default function LoanApplicationForm() {
-  return <FinanceForm title="Create a loan application" description="Capture the requested terms for a manager and accountant to review." submitLabel="Submit loan application" fields={[
-    { name: "member", label: "Member ID", required: true },
+  const { options, loading, error } = useEligibleMembers();
+  return <FinanceForm title="Create a loan application" description="Select a member, then capture the requested terms for review." submitLabel="Submit loan application" warning={error || (loading ? "Loading approved members…" : "Loan applications are operational records only; no journal is posted until an approved loan is actually disbursed.")} fields={[
+    { name: "member", label: "Member", type: "select", required: true, disabled: loading, options },
     { name: "productName", label: "Loan product", type: "select", required: true, options: [{ value: "personal", label: "Personal loan" }, { value: "business", label: "Business loan" }, { value: "emergency", label: "Emergency loan" }] },
     { name: "principal", label: "Requested amount (ETB)", type: "number", min: "0.01", step: "0.01", required: true },
     { name: "interestRatePercent", label: "Annual rate (%)", type: "number", min: "0", max: "100", step: "0.01", required: true },
