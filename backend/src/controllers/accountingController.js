@@ -125,6 +125,42 @@ export async function updateSystemAccountMapping(request, response) {
 	}
 }
 
+export async function removeSystemAccountMapping(request, response) {
+	const { key } = request.params;
+	const definition = mappingDefinitions.find((item) => item.key === key);
+	if (!definition) return response.status(404).json({ message: "System account mapping key was not found." });
+	try {
+		const result = await runFinancialTransaction(async (session) => {
+			const mapping = await SystemAccountMapping.findOne({ key }).session(session);
+			if (mapping) {
+				await AuditLog.create([{
+					actor: request.adminUser._id,
+					actorRole: request.adminUser.role,
+					action: "accounting.system_mapping.removed",
+					resourceType: "SystemAccountMapping",
+					resourceId: mapping._id,
+					outcome: "success",
+					details: { key, account: mapping.account },
+				}], { session });
+				await mapping.deleteOne({ session });
+			}
+			const environmentSetting = accountMappingEnvironmentByKey[key];
+			const environmentAccountId = environmentSetting && process.env[environmentSetting];
+			const legacySystemAccount = await Account.findOne({ systemKey: key }).session(session);
+			const environmentAccount = environmentAccountId && mongoose.isValidObjectId(environmentAccountId)
+				? await Account.findById(environmentAccountId).session(session)
+				: null;
+			if (legacySystemAccount || environmentAccount) {
+				throw operationalError(409, "This mapping is supplied by legacy system/environment configuration. Remove that configuration and redeploy before unmapping it here.");
+			}
+			return { removed: Boolean(mapping) };
+		});
+		return response.json({ message: result.removed ? "System account mapping removed. Transactions requiring it will be blocked until it is configured again." : "No saved system account mapping exists.", removed: result.removed });
+	} catch (error) {
+		return response.status(error.status || 500).json({ message: error.message || "System account mapping could not be removed." });
+	}
+}
+
 export async function listAccounts(request, response) {
 	const filter = {};
 	if (request.query.category) {

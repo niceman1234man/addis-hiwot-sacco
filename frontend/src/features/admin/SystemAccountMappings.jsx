@@ -50,6 +50,24 @@ export default function SystemAccountMappings() {
     }
   }
 
+  async function removeMapping(mapping) {
+    if (!mapping.account) return;
+    const confirmed = window.confirm(`Remove the ${mapping.label} mapping? Transactions that need it will fail until an account is mapped again.`);
+    if (!confirmed) return;
+    setSavingKey(mapping.key);
+    setError("");
+    setNotice("");
+    try {
+      const result = await accountingApi.removeSystemAccountMapping(mapping.key);
+      setNotice(result.message || `${mapping.label} mapping removed.`);
+      await loadMappings();
+    } catch (removeError) {
+      setError(removeError.message || "System mapping could not be removed.");
+    } finally {
+      setSavingKey("");
+    }
+  }
+
   return <section className="workspace-panel">
     <div className="workspace-panel-heading">
       <div><p className="workspace-kicker">Administrator configuration</p><h1>System account mappings</h1><p>Connect routine SACCO operations to the ledger accounts configured in the Chart of Accounts.</p></div>
@@ -83,7 +101,10 @@ export default function SystemAccountMappings() {
             {options.map((account) => <option key={account._id} value={account._id}>{account.code} — {account.name}</option>)}
           </select>
         </label>
-        <button className="button-primary" type="button" disabled={loading || savingKey === mapping.key || !selections[mapping.key] || selections[mapping.key] === mapping.account?._id} onClick={() => saveMapping(mapping)}>{savingKey === mapping.key ? "Saving…" : "Save mapping"}</button>
+        <div className="system-mapping-actions">
+          <button className="button-primary" type="button" disabled={loading || savingKey === mapping.key || !selections[mapping.key] || selections[mapping.key] === mapping.account?._id} onClick={() => saveMapping(mapping)}>{savingKey === mapping.key ? "Saving…" : "Save mapping"}</button>
+          {mapping.source === "database" && <button className="button-secondary system-unmap-button" type="button" disabled={loading || savingKey === mapping.key} onClick={() => removeMapping(mapping)}>{savingKey === mapping.key ? "Removing…" : "Remove mapping"}</button>}
+        </div>
       </article>;
     })}
     {!loading && <p className="workspace-inline-note">Mappings are unique: one ledger account cannot serve multiple system roles. Mapping changes are audited and take effect on subsequent transactions.</p>}

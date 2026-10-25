@@ -536,7 +536,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .system-mapping-copy strong { color: #304a3a; font-size: 12px; }
 .system-mapping-copy span, .system-mapping-copy small { color: #758176; font-size: 10px; line-height: 1.55; }
 .system-mapping-copy b { color: #45654d; }
-.system-mapping-row .button-primary { min-height: 40px; padding-inline: 14px; font-size: 10px; white-space: nowrap; }
+.system-mapping-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.system-mapping-row .button-primary, .system-unmap-button { min-height: 40px; padding-inline: 14px; font-size: 10px; white-space: nowrap; }
+.system-unmap-button { border-color: #e4cfc7; color: #96543f; }
 
 @media (max-width: 900px) {
   .dashboard-sidebar { width: 205px; }
@@ -571,7 +573,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .account-list-controls { grid-template-columns: 1fr 1fr; }
   .account-list-controls .workspace-field:first-child { grid-column: 1 / -1; }
   .system-mapping-row { grid-template-columns: 1fr; align-items: stretch; gap: 12px; }
-  .system-mapping-row .button-primary { justify-self: start; }
+  .system-mapping-actions { justify-self: start; }
   .workspace-topbar { height: 64px; padding-inline: 16px; }
   .workspace-topbar-right { gap: 9px; font-size: 10px; }
   .workspace-topbar-right > span:not(.workspace-user-role) { display: none; }

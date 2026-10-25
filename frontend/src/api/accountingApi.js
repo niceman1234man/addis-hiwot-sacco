@@ -7,6 +7,7 @@ export const accountingApi = {
   deleteAccount: (id) => axiosInstance.delete(`/accounting/accounts/${encodeURIComponent(id)}`),
     systemAccountMappings: () => axiosInstance.get("/accounting/system-mappings"),
     updateSystemAccountMapping: (key, accountId) => axiosInstance.put(`/accounting/system-mappings/${encodeURIComponent(key)}`, { accountId }),
+  removeSystemAccountMapping: (key) => axiosInstance.delete(`/accounting/system-mappings/${encodeURIComponent(key)}`),
   createJournal: (data) => axiosInstance.post("/accounting/journals", data),
   journals: (params = "") => axiosInstance.get(`/accounting/journals${params}`),
   expenses: (params = "") => axiosInstance.get(`/accounting/expenses${params}`),
