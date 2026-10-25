@@ -88,7 +88,7 @@ export default function ChartOfAccounts({ readOnly = false }) {
       && (!categoryFilter || account.category === categoryFilter)
       && (statusFilter === "all" || account.isActive === (statusFilter === "active"));
   });
-  const parentOptions = accounts.filter((account) => account.isActive && (account.accountType === "group" || accounts.some((item) => (item.parent?._id || item.parent) === account._id)) && account.category === values.category && account._id !== editingId);
+  const parentOptions = accounts.filter((account) => account.isActive && !account.isSystemMapped && !account.isSystem && !account.systemKey && (account.accountType === "group" || accounts.some((item) => (item.parent?._id || item.parent) === account._id) || account.allowManualPosting === false) && account.category === values.category && account._id !== editingId);
   const accountDepth = (account) => {
     let depth = 0;
     let parentId = account.parent?._id || account.parent;

@@ -4,7 +4,7 @@ const transactionSchema = new mongoose.Schema(
 	{
 		reference: { type: String, required: true, trim: true, uppercase: true, maxlength: 40, unique: true },
 		idempotencyKey: { type: String, trim: true, maxlength: 128, default: undefined },
-		type: { type: String, enum: ["deposit", "withdrawal", "loan_disbursement", "loan_repayment", "fee", "interest", "expense", "adjustment", "reversal"], required: true, index: true },
+		type: { type: String, enum: ["deposit", "withdrawal", "share_purchase", "loan_disbursement", "loan_repayment", "fee", "interest", "expense", "adjustment", "reversal"], required: true, index: true },
 		status: { type: String, enum: ["pending", "posted", "failed", "reversed"], default: "pending", index: true },
 		member: { type: mongoose.Schema.Types.ObjectId, ref: "Member", default: null, index: true },
 		savingsAccount: { type: mongoose.Schema.Types.ObjectId, ref: "SavingsAccount", default: null },

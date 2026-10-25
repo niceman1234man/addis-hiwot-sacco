@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Activity, Banknote, BookOpenCheck, ChartNoAxesCombined, CircleDollarSign, ClipboardList, FileBarChart, HandCoins, LayoutDashboard, ReceiptText, UsersRound, WalletCards } from "lucide-react";
+import { Activity, Banknote, BookOpenCheck, ChartNoAxesCombined, CircleDollarSign, ClipboardList, FileBarChart, HandCoins, LayoutDashboard, ReceiptText, UsersRound, WalletCards, Coins } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import DashboardLayout from "../components/layout/DashboardLayout.jsx";
 import AdminDashboard from "./admin/AdminDashboard.jsx";
@@ -25,6 +25,7 @@ import ExpenseForm from "./accountant/ExpenseForm.jsx";
 import ExpenseApprovals from "./manager/ExpenseApprovals.jsx";
 import ExpensePayments from "./cashier/ExpensePayments.jsx";
 import SystemAccountMappings from "./admin/SystemAccountMappings.jsx";
+import SharePurchase from "./cashier/SharePurchase.jsx";
 
 const roleConfig = {
   admin: {
@@ -47,13 +48,13 @@ const roleConfig = {
   },
   accountant: {
     title: "Accounting workspace",
-    links: [["/accountant", "Overview", LayoutDashboard], ["/accountant/accounts", "Chart of accounts", BookOpenCheck], ["/accountant/journals", "Journal entries", ReceiptText], ["/accountant/expenses", "Submit expense", ReceiptText], ["/accountant/savings", "Savings accounts", WalletCards], ["/accountant/loans", "Loans", HandCoins], ["/accountant/disbursements", "Loan disbursement", Banknote], ["/accountant/transactions", "Transactions", Activity], ["/accountant/reports", "Financial reports", FileBarChart]],
-    pages: { "/accountant": AccountantDashboard, "/accountant/accounts": ChartOfAccounts, "/accountant/journals": JournalEntries, "/accountant/expenses": ExpenseForm, "/accountant/savings": SavingsAccountForm, "/accountant/loans": LoanApplicationForm, "/accountant/disbursements": LoanDisbursement, "/accountant/transactions": TransactionsList, "/accountant/reports": FinancialReports },
+    links: [["/accountant", "Overview", LayoutDashboard], ["/accountant/accounts", "Chart of accounts", BookOpenCheck], ["/accountant/journals", "Journal entries", ReceiptText], ["/accountant/expenses", "Submit expense", ReceiptText], ["/accountant/shares", "Share purchase", Coins], ["/accountant/savings", "Savings accounts", WalletCards], ["/accountant/loans", "Loans", HandCoins], ["/accountant/disbursements", "Loan disbursement", Banknote], ["/accountant/transactions", "Transactions", Activity], ["/accountant/reports", "Financial reports", FileBarChart]],
+    pages: { "/accountant": AccountantDashboard, "/accountant/accounts": ChartOfAccounts, "/accountant/journals": JournalEntries, "/accountant/expenses": ExpenseForm, "/accountant/shares": SharePurchase, "/accountant/savings": SavingsAccountForm, "/accountant/loans": LoanApplicationForm, "/accountant/disbursements": LoanDisbursement, "/accountant/transactions": TransactionsList, "/accountant/reports": FinancialReports },
   },
   cashier: {
     title: "Cashier workspace",
-    links: [["/cashier", "Overview", LayoutDashboard], ["/cashier/deposit", "Deposit", CircleDollarSign], ["/cashier/withdrawal", "Withdrawal", Banknote], ["/cashier/payment", "Payments", WalletCards], ["/cashier/expenses", "Approved expenses", ReceiptText], ["/cashier/transactions", "Transactions", Activity], ["/cashier/closing", "Cash closing", ReceiptText]],
-    pages: { "/cashier": CashierDashboard, "/cashier/deposit": Deposit, "/cashier/withdrawal": Withdrawal, "/cashier/payment": Payment, "/cashier/expenses": ExpensePayments, "/cashier/transactions": TransactionsList, "/cashier/closing": CashClosing },
+    links: [["/cashier", "Overview", LayoutDashboard], ["/cashier/deposit", "Deposit", CircleDollarSign], ["/cashier/withdrawal", "Withdrawal", Banknote], ["/cashier/shares", "Share purchase", Coins], ["/cashier/payment", "Payments", WalletCards], ["/cashier/expenses", "Approved expenses", ReceiptText], ["/cashier/transactions", "Transactions", Activity], ["/cashier/closing", "Cash closing", ReceiptText]],
+    pages: { "/cashier": CashierDashboard, "/cashier/deposit": Deposit, "/cashier/withdrawal": Withdrawal, "/cashier/shares": SharePurchase, "/cashier/payment": Payment, "/cashier/expenses": ExpensePayments, "/cashier/transactions": TransactionsList, "/cashier/closing": CashClosing },
   },
 };
 

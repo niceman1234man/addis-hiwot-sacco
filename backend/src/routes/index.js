@@ -8,6 +8,7 @@ import memberRoutes from "./memberRoutes.js";
 import repaymentRoutes from "./repaymentRoutes.js";
 import reportRoutes from "./reportRoutes.js";
 import savingsRoutes from "./savingsRoutes.js";
+import shareRoutes from "./shareRoutes.js";
 import transactionRoutes from "./transactionRoutes.js";
 import userRoutes from "./userRoutes.js";
 
@@ -16,6 +17,7 @@ routes.use("/auth", authRoutes);
 routes.use("/users", userRoutes);
 routes.use("/members", memberRoutes);
 routes.use("/savings", savingsRoutes);
+routes.use("/shares", shareRoutes);
 routes.use("/loans", loanRoutes);
 routes.use("/repayments", repaymentRoutes);
 routes.use("/transactions", transactionRoutes);

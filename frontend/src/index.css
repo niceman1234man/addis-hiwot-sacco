@@ -516,6 +516,13 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .account-row-actions .text-button { white-space: nowrap; }
 .account-tree-name { display: inline-block; padding-left: calc(var(--account-depth, 0) * 18px); }
 .account-tree-name.is-group { color: #294b37; font-weight: 800; }
+.journal-register-heading { margin-top: 38px; padding-top: 24px; border-top: 1px solid #e5eae2; }
+.journal-lines-summary { display: grid; gap: 4px; min-width: 220px; color: #5e7062; font-size: 10px; }
+.ledger-report-sections { display: grid; gap: 28px; margin-top: 30px; }
+.ledger-report-block { display: grid; gap: 16px; }
+.ledger-report-total { display: flex; justify-content: space-between; gap: 15px; padding: 14px 17px; border-top: 1px solid #dfe6dc; color: #3d5644; font-size: 11px; }
+.status-unbalanced { background: #f5e5df; color: #9c5742; }
+.report-period-form { padding: 20px; border: 1px solid #e2e8df; background: #f9faf6; }
 .account-tree-name { display: inline-block; padding-left: calc(var(--account-depth, 0) * 18px); }
 .account-tree-name.is-group { color: #294b37; font-weight: 800; }
 .system-mapping-row { display: grid; grid-template-columns: minmax(190px, .9fr) minmax(240px, 1.2fr) auto; align-items: end; gap: 18px; padding: 18px 0; border-bottom: 1px solid #e5eae2; }

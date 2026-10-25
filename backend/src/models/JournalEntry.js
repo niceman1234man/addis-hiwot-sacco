@@ -17,7 +17,7 @@ const journalEntrySchema = new mongoose.Schema(
 		currency: { type: String, default: "ETB", uppercase: true, minlength: 3, maxlength: 3, required: true },
 		lines: { type: [journalLineSchema], required: true, validate: [(lines) => lines.length >= 2, "A journal entry requires at least two lines."] },
 		status: { type: String, enum: ["draft", "posted", "reversed"], default: "draft", index: true },
-		sourceType: { type: String, enum: ["manual", "transaction", "repayment", "expense", "adjustment"], default: "manual" },
+		sourceType: { type: String, enum: ["manual", "transaction", "repayment", "expense", "share_purchase", "adjustment"], default: "manual" },
 		sourceId: { type: mongoose.Schema.Types.ObjectId, default: null },
 		createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 		postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

@@ -42,6 +42,7 @@ const mappingDefinitions = [
 	{ key: "bank", label: "Bank receipts and payments", category: "asset", normalBalance: "debit" },
 	{ key: "mobile_money", label: "Mobile money receipts and payments", category: "asset", normalBalance: "debit" },
 	{ key: "savings", label: "Members' savings liability", category: "liability", normalBalance: "credit" },
+	{ key: "share_capital", label: "Members' share capital", category: "equity", normalBalance: "credit" },
 	{ key: "loan_receivable", label: "Loan principal receivable", category: "asset", normalBalance: "debit" },
 	{ key: "interest_income", label: "Loan interest income", category: "income", normalBalance: "credit" },
 	{ key: "fees_income", label: "Loan and service fees income", category: "income", normalBalance: "credit" },
@@ -183,6 +184,7 @@ export async function createAccount(request, response) {
 			if (body.parent) {
 				parentAccount = await Account.findOne({ _id: body.parent, isActive: true, currency, category: body.category }).session(session);
 				if (!parentAccount) throw operationalError(400, "Parent account must exist, be active, and use the same currency.");
+				if (parentAccount.accountType === "posting" && (parentAccount.isSystem || parentAccount.systemKey || await SystemAccountMapping.exists({ account: parentAccount._id }).session(session))) throw operationalError(409, "A system-mapped posting account cannot become a parent account.");
 				const hasChildren = await Account.exists({ parent: parentAccount._id }).session(session);
 				if (parentAccount.accountType !== "group" && !hasChildren && parentAccount.allowManualPosting !== false) throw operationalError(409, "The selected parent must be a Parent / Group account.");
 				if (body.code.trim() <= parentAccount.code) throw operationalError(400, "Child account codes must sort after their parent account code.");
@@ -254,6 +256,8 @@ export async function updateAccount(request, response) {
 				if (body.parent) {
 					const parent = await Account.findOne({ _id: body.parent, isActive: true, currency: current.currency, category: current.category }).session(session);
 					if (!parent) throw operationalError(400, "Parent account must be active and match this account's category and currency.");
+					const parentEnvironmentMapped = accountMappingEnvironmentKeys.some((key) => process.env[key] && String(parent._id) === process.env[key]);
+					if (parent.accountType === "posting" && (parent.isSystem || parent.systemKey || parentEnvironmentMapped || await SystemAccountMapping.exists({ account: parent._id }).session(session))) throw operationalError(409, "A system-mapped posting account cannot become a parent account.");
 					const hasChildren = await Account.exists({ parent: parent._id }).session(session);
 					if (parent.accountType !== "group" && !hasChildren && parent.allowManualPosting !== false) throw operationalError(409, "The selected parent must be a Parent / Group account.");
 					if (current.code <= parent.code) throw operationalError(400, "Child account codes must sort after their parent account code.");
@@ -307,6 +311,7 @@ export async function updateAccount(request, response) {
 				if (body.accountType === "posting" && await Account.exists({ parent: current._id }).session(session)) throw operationalError(409, "An account with children must remain a Parent / Group account.");
 				current.accountType = body.accountType;
 				if (body.accountType === "group") current.allowManualPosting = false;
+				else if (body.allowManualPosting === undefined) current.allowManualPosting = true;
 			}
 			if (body.allowManualPosting !== undefined) {
 				if (typeof body.allowManualPosting !== "boolean") throw operationalError(400, "Manual posting setting must be true or false.");
@@ -413,6 +418,24 @@ export async function createJournal(request, response) {
 	} catch (error) {
 		console.error("Unable to create journal:", error.message);
 		return response.status(error.status || (error.code === 11000 ? 409 : 500)).json({ message: error.message || "Journal could not be posted." });
+	}
+}
+
+export async function listJournals(request, response) {
+	const filter = { status: "posted" };
+	if (request.query.sourceType) {
+		if (!["manual", "transaction", "repayment", "expense", "share_purchase", "adjustment"].includes(request.query.sourceType)) return response.status(400).json({ message: "Journal source type is invalid." });
+		filter.sourceType = request.query.sourceType;
+	}
+	const limit = Math.min(Math.max(Number.parseInt(request.query.limit, 10) || 50, 1), 100);
+	try {
+		const journals = await JournalEntry.find(filter).sort({ date: -1, createdAt: -1 }).limit(limit)
+			.populate("lines.account", "code name category accountType")
+			.populate("createdBy postedBy", "name email").lean();
+		return response.json({ journals });
+	} catch (error) {
+		console.error("Unable to list journal entries:", error.message);
+		return response.status(500).json({ message: "Journal entries could not be loaded." });
 	}
 }
 

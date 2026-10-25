@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const systemAccountMappingSchema = new mongoose.Schema({
 	key: {
 		type: String,
-		enum: ["cash", "bank", "mobile_money", "savings", "loan_receivable", "interest_income", "fees_income", "loan_impairment", "expense"],
+		enum: ["cash", "bank", "mobile_money", "savings", "share_capital", "loan_receivable", "interest_income", "fees_income", "loan_impairment", "expense"],
 		required: true,
 		unique: true,
 	},

@@ -4,7 +4,7 @@ import { previewSavingsBalance } from "../src/services/savingsService.js";
 import { buildMonthlyAmortizationSchedule, calculateAmortizedPaymentMinor } from "../src/services/loanService.js";
 import { validateBalancedJournalLines, buildJournalLines } from "../src/services/accountingService.js";
 import { createTransactionDraft, assertTransactionTransition } from "../src/services/transactionService.js";
-import { summarizeTransactions } from "../src/services/reportService.js";
+import { summarizeJournalLedger, summarizeTransactions } from "../src/services/reportService.js";
 import { validateLoan } from "../src/validators/loanValidator.js";
 import { validateTransaction } from "../src/validators/transactionValidator.js";
 import mongoose from "mongoose";
@@ -61,6 +61,25 @@ test("reports summarize posted records only and preserve currency separation", (
   ]);
   assert.deepEqual(result.ETB, { creditsMinor: 200, debitsMinor: 50, count: 2 });
   assert.equal(result.USD.creditsMinor, 10);
+});
+
+test("journal ledger report balances postings and rolls child balances into nested parent accounts", () => {
+  const accounts = [
+    { _id: "1000", code: "1000", name: "Assets", category: "asset", accountType: "group", normalBalance: "debit", parent: null },
+    { _id: "1100", code: "1100", name: "Cash and bank", category: "asset", accountType: "group", normalBalance: "debit", parent: "1000" },
+    { _id: "1101", code: "1101", name: "Cash", category: "asset", accountType: "posting", normalBalance: "debit", parent: "1100" },
+    { _id: "2001", code: "2001", name: "Savings", category: "liability", accountType: "posting", normalBalance: "credit", parent: null },
+  ];
+  const report = summarizeJournalLedger([
+    { status: "posted", lines: [{ account: "1101", debitMinor: 500000, creditMinor: 0 }, { account: "2001", debitMinor: 0, creditMinor: 500000 }] },
+    { status: "draft", lines: [{ account: "1101", debitMinor: 999, creditMinor: 0 }, { account: "2001", debitMinor: 0, creditMinor: 999 }] },
+  ], accounts);
+  assert.equal(report.balanced, true);
+  assert.equal(report.totalDebitMinor, 500000);
+  assert.equal(report.totalCreditMinor, 500000);
+  assert.equal(report.rows.find((row) => row.accountId === "1000").debitMinor, 500000);
+  assert.equal(report.rows.find((row) => row.accountId === "1100").debitBalanceMinor, 500000);
+  assert.equal(report.rows.find((row) => row.accountId === "2001").creditBalanceMinor, 500000);
 });
 
 test("loan and transaction validators reject unsafe amounts", () => {
