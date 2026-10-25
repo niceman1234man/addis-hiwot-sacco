@@ -10,6 +10,11 @@ export default function FinanceForm({ title, description, fields, submitLabel = 
     setValues((current) => ({ ...current, [name]: value }));
   }
 
+  function handleFieldChange(field, value) {
+  const dependentValues = field.onChange?.(value, values) || {};
+  setValues((current) => ({ ...current, [field.name]: value, ...dependentValues }));
+  }
+
   async function submit(event) {
     event.preventDefault();
     setBusy(true);
@@ -38,7 +43,7 @@ export default function FinanceForm({ title, description, fields, submitLabel = 
             <label className={field.wide ? "workspace-field workspace-field-wide" : "workspace-field"} key={field.name}>
               <span>{field.label}{field.required && <b aria-hidden="true"> *</b>}</span>
               {field.type === "select" ? (
-                <select value={values[field.name]} onChange={(event) => setValue(field.name, event.target.value)} required={field.required}>
+                <select value={values[field.name]} onChange={(event) => handleFieldChange(field, event.target.value)} required={field.required} disabled={field.disabled}>
                   <option value="" disabled>Select {field.label.toLowerCase()}</option>
                   {field.options.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
                 </select>

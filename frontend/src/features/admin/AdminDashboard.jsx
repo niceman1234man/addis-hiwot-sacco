@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import logo from "../../assets/logo.jpg";
 import {
   archiveAdminUser,
   createAdminUser,
@@ -338,7 +339,7 @@ function StaffHeader({ user, isSignedIn, onSignOut }) {
   return (
     <header className="staff-header">
       <Link to="/" className="staff-brand">
-        <span className="staff-brand-mark" aria-hidden="true">A</span>
+        <img className="staff-brand-logo" src={logo} alt="" />
         <span><strong>Addis Hiwot SACCO</strong><small>Administration</small></span>
       </Link>
       {isSignedIn ? (

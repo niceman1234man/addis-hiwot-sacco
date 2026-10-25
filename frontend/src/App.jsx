@@ -11,13 +11,11 @@ import {
   HeartHandshake,
   Info,
   Landmark,
-  ShieldCheck,
-  Sprout,
-  UsersRound,
 } from "lucide-react";
 import { createMemberApplication } from "./api/membersApi.js";
 import AppRoutes from "./routes/AppRoutes.jsx";
 import PublicHeader from "./components/layout/PublicHeader.jsx";
+import logo from "./assets/logo.jpg";
 
 const regions = [
   "Addis Ababa",
@@ -36,27 +34,10 @@ const regions = [
   "Tigray",
 ];
 
-function SeedMark({ size = 25 }) {
-  return (
-    <svg
-      aria-hidden="true"
-      width={size}
-      height={size}
-      viewBox="0 0 32 32"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M16 26.5C9.7 23.9 7.2 18.7 9.4 12.8c4.9.2 8.3 3.5 8.2 8.1-.1 2.2-.7 4-1.6 5.6Z" fill="currentColor" opacity=".7" />
-      <path d="M16.2 25.8c-1.7-7.5.7-14.5 7.1-19.9 3.7 6.4 2 13.6-4.4 18.1-1 .7-1.9 1.3-2.7 1.8Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M16 27V16.6m0 4.4c-1.5-1.8-3.2-3-5.3-3.6m5.5-1.8c1-1.7 2.3-3.3 4.1-4.8" stroke="currentColor" strokeWidth="1.35" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 function Brand({ light = false }) {
   return (
     <Link to="/" className={`brand${light ? " footer-brand-link" : ""}`} aria-label="Addis Hiwot SACCO home">
-      <span className="brand-mark"><SeedMark /></span>
+      <img className="brand-logo" src={logo} alt="" />
       <span className="brand-name">
         <strong>Addis Hiwot SACCO</strong>
         <span>አዲስ ሕይወት · Savings &amp; Credit</span>
@@ -76,7 +57,6 @@ function Footer() {
         <nav className="footer-nav" aria-label="Footer navigation">
           <a href="/#about">About the cooperative</a>
           <a href="/#how-it-works">Membership</a>
-          <Link to="/register">Apply to join</Link>
           <Link to="/admin">Staff portal</Link>
         </nav>
       </div>
@@ -96,23 +76,13 @@ function SiteLayout({ children }) {
 
 function HeroArtwork() {
   return (
-    <div className="hero-art" aria-label="Illustration of a community home among terraced green hills">
+    <div className="hero-art" aria-label="Addis Hiwot SACCO community logo">
       <span className="hero-side-label">Stronger together · Addis Ababa</span>
-      <div className="art-frame" role="img" aria-label="A warm sunrise over green hills and a welcoming home">
-        <div className="art-sky" />
-        <div className="art-sun" />
-        <div className="art-hill art-hill-one" />
-        <div className="art-hill art-hill-two" />
-        <div className="art-field" />
-        <div className="art-hill art-hill-three" />
-        <div className="art-tree tree-a" />
-        <div className="art-tree tree-b" />
-        <div className="art-house" />
-        <div className="art-window" />
-        <div className="art-window art-window-two" />
-        <div className="art-caption">
-          <span className="caption-mark"><SeedMark size={21} /></span>
-          <div><span>Our promise</span><strong>Progress, shared.</strong></div>
+      <div className="hero-logo-frame">
+        <img className="hero-logo" src={logo} alt="Addis Hiwot SACCO logo showing members building shared savings" />
+        <div className="hero-logo-caption">
+          <span>Our promise</span>
+          <strong>Progress, shared.</strong>
         </div>
       </div>
     </div>
@@ -146,67 +116,34 @@ function HomePage() {
           </div>
         </section>
 
-        <section className="principle-strip" aria-label="Cooperative principles">
-          <div className="page-wrap principle-inner">
-            <div className="strip-intro">Good things grow when we build them together.</div>
-            <div className="strip-item"><UsersRound size={18} />People before profit</div>
-            <div className="strip-item"><ShieldCheck size={18} />Trust through transparency</div>
-            <div className="strip-item"><Sprout size={18} />Steady, shared progress</div>
-          </div>
-        </section>
-
         <section className="section" id="about">
           <div className="page-wrap">
             <div className="section-heading">
               <div>
                 <span className="eyebrow">What we make possible</span>
-                <h2>Financial strength,<br />with people at its heart.</h2>
+                <h2>Financial strength, together.</h2>
               </div>
-              <p>A SACCO is more than a place to save. It is a community choosing to make opportunity more reachable for one another.</p>
+              <p>A member-owned community helping make saving and financial opportunity more reachable.</p>
             </div>
             <div className="offer-grid" id="services">
               <article className="offer-card">
                 <span className="offer-index">01 / SAVE TOGETHER</span>
                 <span className="offer-symbol"><CircleDollarSign size={25} strokeWidth={1.5} /></span>
                 <div>
-                  <h3>Make room for your plans.</h3>
-                  <p>Build a savings habit with the support of a member-owned cooperative and a community that understands the value of every contribution.</p>
+                  <h3>Save with purpose.</h3>
+                  <p>Build a steady savings habit with the support of a member-owned cooperative.</p>
                 </div>
-                <div className="card-foot"><span>Small steps. Meaningful momentum.</span><ChevronRight size={16} /></div>
+                <div className="card-foot"><span>Small steps. Shared progress.</span><ChevronRight size={16} /></div>
               </article>
               <article className="offer-card">
                 <span className="offer-index">02 / GROW WITH CARE</span>
                 <span className="offer-symbol"><HandCoins size={25} strokeWidth={1.5} /></span>
                 <div>
-                  <h3>Opportunity, built on trust.</h3>
-                  <p>Cooperative finance connects members to one another, creating a foundation for thoughtful financial progress.</p>
+                  <h3>Grow together.</h3>
+                  <p>Members support one another and build a stronger financial future together.</p>
                 </div>
                 <div className="card-foot"><span>Member needs come first.</span><ChevronRight size={16} /></div>
               </article>
-            </div>
-          </div>
-        </section>
-
-        <section className="story-section">
-          <div className="page-wrap story-grid">
-            <div className="story-visual" aria-label="A seedling at the center of interconnected paths">
-              <div className="story-orbit" />
-              <div className="seed-center"><SeedMark size={43} /></div>
-              <div className="story-quote">“A stronger future is something we grow together.”</div>
-            </div>
-            <div className="story-copy">
-              <span className="eyebrow">The cooperative difference</span>
-              <h2>One member's hope can become everyone's strength.</h2>
-              <p>
-                Addis Hiwot means “new life.” That idea sits at the centre of how we
-                work: members are not customers watching from the sidelines. They are
-                the cooperative—sharing responsibility, possibility, and a voice in
-                the community they build.
-              </p>
-              <div className="story-values">
-                <div className="story-value"><strong>Owned by members</strong><span>People who join are part of the cooperative.</span></div>
-                <div className="story-value"><strong>Grounded in community</strong><span>Local relationships shape how we move forward.</span></div>
-              </div>
             </div>
           </div>
         </section>
@@ -216,42 +153,32 @@ function HomePage() {
             <div className="steps-intro">
               <span className="eyebrow">Your first step</span>
               <h2>Joining starts with a conversation.</h2>
-              <p>Tell us a little about yourself. Our team can follow up about the next steps in becoming a member.</p>
-              <Link to="/register" className="text-link">Begin your application <ArrowRight size={15} /></Link>
+              <p>Submit your details and our team will contact you about joining.</p>
             </div>
             <div className="steps-list">
               <div className="step-row">
                 <span className="step-num">01</span>
-                <div><h3>Share your details</h3><p>Complete the membership application with your contact and identification information.</p></div>
+                <div><h3>Share your details</h3><p>Complete the short application and provide an ID document.</p></div>
                 <ArrowRight size={17} />
               </div>
               <div className="step-row">
                 <span className="step-num">02</span>
-                <div><h3>We receive your application</h3><p>Your information is sent to the cooperative for follow-up.</p></div>
+                <div><h3>We review it</h3><p>Our cooperative team receives your application.</p></div>
                 <ArrowRight size={17} />
               </div>
               <div className="step-row">
                 <span className="step-num">03</span>
-                <div><h3>Connect with our team</h3><p>A cooperative representative can guide you through membership details and what comes next.</p></div>
+                <div><h3>We get in touch</h3><p>Our team will help you with the next steps.</p></div>
                 <HeartHandshake size={19} />
               </div>
             </div>
           </div>
         </section>
 
-        <section className="closing-band">
-          <div className="page-wrap closing-inner">
-            <div>
-              <span className="eyebrow">አዲስ ሕይወት · A new life, together</span>
-              <h2>Your next chapter can begin with one small step.</h2>
-            </div>
-            <Link to="/register" className="button-primary">Apply for membership <ArrowRight size={16} /></Link>
-          </div>
-        </section>
         <section className="contact-section" id="contact">
           <div className="page-wrap contact-inner">
-            <div><span className="eyebrow">Get in touch</span><h2>We are here to help you take the next step.</h2><p>Contact the Addis Hiwot team for membership questions and cooperative services.</p></div>
-            <div className="contact-card"><span>ADDIS HIWOT SACCO</span><strong>Visit or speak with our team</strong><p>Addis Ababa, Ethiopia</p><Link to="/register">Ask about membership <ArrowRight size={14} /></Link></div>
+            <div><span className="eyebrow">Get in touch</span><h2>Here for our community.</h2><p>Visit the Addis Hiwot team in Addis Ababa for cooperative services and membership information.</p></div>
+            <div className="contact-card"><span>ADDIS HIWOT SACCO</span><strong>Visit our team</strong><p>Addis Ababa, Ethiopia</p></div>
           </div>
         </section>
       </main>

@@ -117,10 +117,45 @@ export async function listSavings(request, response) {
 	}
 	const limit = Math.min(Math.max(Number.parseInt(request.query.limit, 10) || 50, 1), 100);
 	try {
+		if (request.query.search) {
+			const escapedSearch = String(request.query.search).trim().slice(0, 100).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			const searchExpression = new RegExp(escapedSearch, "i");
+			const matchingMembers = await Member.find({
+				$or: [
+					{ firstName: searchExpression },
+					{ middleName: searchExpression },
+					{ lastName: searchExpression },
+					{ memberNumber: searchExpression },
+				],
+			}).select("_id").lean();
+			filter.$or = [
+				{ accountNumber: searchExpression },
+				{ member: { $in: matchingMembers.map((member) => member._id) } },
+			];
+		}
 		const accounts = await SavingsAccount.find(filter).sort({ createdAt: -1 }).limit(limit).populate("member", "firstName middleName lastName memberNumber").lean();
 		return response.json({ accounts });
 	} catch (error) {
 		return response.status(500).json({ message: "Savings accounts could not be loaded." });
+	}
+}
+
+export async function listEligibleMembers(_request, response) {
+	try {
+		const members = await Member.find({ $or: [{ status: "approved" }, { membershipStatus: "active" }] })
+			.select("firstName middleName lastName memberNumber")
+			.sort({ lastName: 1, firstName: 1 })
+			.lean();
+		return response.json({ members: members.map((member) => ({
+			id: String(member._id),
+			firstName: member.firstName,
+			middleName: member.middleName,
+			lastName: member.lastName,
+			memberNumber: member.memberNumber || "",
+		})) });
+	} catch (error) {
+		console.error("Unable to load eligible savings members:", error.message);
+		return response.status(500).json({ message: "Eligible members could not be loaded." });
 	}
 }
 

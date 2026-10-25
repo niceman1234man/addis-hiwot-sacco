@@ -24,6 +24,7 @@ import FinancialSummary from "./reports/FinancialSummary.jsx";
 import ExpenseForm from "./accountant/ExpenseForm.jsx";
 import ExpenseApprovals from "./manager/ExpenseApprovals.jsx";
 import ExpensePayments from "./cashier/ExpensePayments.jsx";
+import SystemAccountMappings from "./admin/SystemAccountMappings.jsx";
 
 const roleConfig = {
   admin: {
@@ -33,10 +34,11 @@ const roleConfig = {
       ["/admin/users", "User management", UsersRound],
       ["/admin/members", "Member applications", ClipboardList],
       ["/admin/accounts", "Chart of accounts", BookOpenCheck],
+      ["/admin/account-mappings", "System account mappings", WalletCards],
       ["/admin/reports", "Reports", FileBarChart],
       ["/admin/transactions", "Transactions", Activity],
     ],
-    pages: { "/admin": AdminDashboard, "/admin/users": AdminDashboard, "/admin/members": MemberApplications, "/admin/accounts": ChartOfAccounts, "/admin/reports": FinancialSummary, "/admin/transactions": TransactionsList },
+    pages: { "/admin": AdminDashboard, "/admin/users": AdminDashboard, "/admin/members": MemberApplications, "/admin/accounts": ChartOfAccounts, "/admin/account-mappings": SystemAccountMappings, "/admin/reports": FinancialSummary, "/admin/transactions": TransactionsList },
   },
   manager: {
     title: "Manager workspace",
@@ -75,6 +77,6 @@ export default function RoleWorkspace({ user }) {
       <button type="button" className="mobile-nav-button" onClick={() => setMobileNav((open) => !open)} aria-expanded={mobileNav}>Sections</button>
     </div>
     {mobileNav && <nav className="workspace-mobile-nav">{config.links.map(([to, label]) => <Link key={to} to={to} onClick={() => setMobileNav(false)}>{label}</Link>)}</nav>}
-    {Page ? <Page /> : <section className="workspace-panel"><h2>This section is not available</h2><p>Choose a section from the navigation.</p></section>}
+    {Page ? <Page user={user} readOnly={role !== "admin"} /> : <section className="workspace-panel"><h2>This section is not available</h2><p>Choose a section from the navigation.</p></section>}
   </DashboardLayout>;
 }

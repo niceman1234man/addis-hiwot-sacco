@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Account from "../models/Account.js";
 import JournalEntry from "../models/JournalEntry.js";
+import SystemAccountMapping from "../models/SystemAccountMapping.js";
 import { buildJournalLines } from "./accountingService.js";
 import { createLedgerTransaction } from "./financialTransactions.js";
 import { generateReference } from "../utils/generateReference.js";
@@ -14,21 +15,66 @@ const accountSettingByCode = Object.freeze({
   interest_income: "SACCO_INTEREST_INCOME_ACCOUNT_ID",
   fees_income: "SACCO_FEES_INCOME_ACCOUNT_ID",
   expense: "SACCO_EXPENSE_ACCOUNT_ID",
+  loan_impairment: null,
+});
+const accountCategoryByCode = Object.freeze({
+  cash: "asset",
+  bank: "asset",
+  mobile_money: "asset",
+  savings: "liability",
+  loan_receivable: "asset",
+  interest_income: "income",
+  fees_income: "income",
+  expense: "expense",
+  loan_impairment: "expense",
 });
 
 export async function configuredAccount(code, currency, session) {
-  const systemAccount = await Account.findOne({ systemKey: code, isActive: true, currency }).session(session);
-  if (systemAccount) return systemAccount;
   const setting = accountSettingByCode[code];
-  const id = setting && process.env[setting];
-  if (!id || !mongoose.isValidObjectId(id)) {
-    const error = new Error(`Financial posting is unavailable: configure ${setting || code}.`);
+  const mapping = await SystemAccountMapping.findOne({ key: code }).session(session);
+  let account = null;
+  if (mapping) {
+    account = await Account.findOne({ _id: mapping.account, isActive: true, currency }).session(session);
+    if (!account) {
+      const error = new Error(`Configured financial posting account ${code} is missing, inactive, or has a different currency.`);
+      error.status = 503;
+      throw error;
+    }
+  }
+  if (!account) {
+    const systemAccount = await Account.findOne({ systemKey: code, isActive: true, currency }).session(session);
+    const environmentAccountId = setting && process.env[setting];
+    const environmentAccount = environmentAccountId && mongoose.isValidObjectId(environmentAccountId)
+      ? await Account.findOne({ _id: environmentAccountId, isActive: true, currency }).session(session)
+      : null;
+    if (systemAccount && environmentAccount && String(systemAccount._id) !== String(environmentAccount._id)) {
+      const conflict = new Error(`Conflicting ledger configurations exist for ${code}. Resolve the system mapping in the administrator settings.`);
+      conflict.status = 503;
+      throw conflict;
+    }
+    account = systemAccount || environmentAccount;
+  }
+  if (!account) {
+    const id = setting && process.env[setting];
+    if (!id || !mongoose.isValidObjectId(id)) {
+      const error = new Error(`Financial posting is unavailable: configure ${setting || code}.`);
+      error.status = 503;
+      throw error;
+    }
+    account = await Account.findOne({ _id: id, isActive: true, currency }).session(session);
+  }
+  if (!account) {
+    const error = new Error(`Financial posting account ${code} is missing, inactive, or has a different currency.`);
     error.status = 503;
     throw error;
   }
-  const account = await Account.findOne({ _id: id, isActive: true, currency }).session(session);
-  if (!account) {
-    const error = new Error(`Financial posting account ${code} is missing, inactive, or has a different currency.`);
+  if (account.category !== accountCategoryByCode[code]) {
+    const error = new Error(`Financial posting account ${code} has an incompatible category.`);
+    error.status = 503;
+    throw error;
+  }
+  if (account.accountType === "group" || await Account.exists({ parent: account._id }).session(session)) {
+    const error = new Error(`Financial posting account ${code} is a parent account and cannot receive postings.`);
     error.status = 503;
     throw error;
   }

@@ -31,6 +31,7 @@ export const axiosInstance = {
     ...options,
   }),
   patch: (path, data) => request(path, jsonOptions("PATCH", data)),
+  put: (path, data) => request(path, jsonOptions("PUT", data)),
   delete: (path) => request(path, { method: "DELETE" }),
   blob: async (path) => {
     const response = await fetch(`${API_BASE}${path}`);

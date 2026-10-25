@@ -3,6 +3,7 @@ import { ArrowLeft, KeyRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { changeAdminPassword, getAdminSession, signInAdmin } from "../../api/authApi.js";
 import PublicHeader from "../../components/layout/PublicHeader.jsx";
+import logo from "../../assets/logo.jpg";
 
 function AuthPage({ children, backTo = "/" }) {
   return (
@@ -11,7 +12,7 @@ function AuthPage({ children, backTo = "/" }) {
       <main className="auth-page">
         <div className="auth-content">
           <Link className="auth-brand" to="/" aria-label="Addis Hiwot SACCO home">
-            <img src="/favicon.svg" alt="" />
+            <img src={logo} alt="" />
             <span>
               <strong>Addis Hiwot SACCO</strong>
               <small>Staff portal</small>

@@ -41,6 +41,7 @@ export default function ExpenseApprovals() {
     { key: "expenseNumber", label: "Expense" },
     { key: "description", label: "Description" },
     { key: "category", label: "Category" },
+    { key: "account", label: "Ledger account", render: (item) => item.account ? `${item.account.code} — ${item.account.name}` : "Configured default" },
     { key: "amountMinor", label: "Amount", render: (item) => formatCurrency(item.amountMinor / 100, item.currency) },
     { key: "requestedBy", label: "Requested by", render: (item) => item.requestedBy?.name || "—" },
     { key: "actions", label: "Decision", render: (item) => <span className="expense-actions"><button type="button" onClick={() => decide(item, "approved")}>Approve</button><button type="button" onClick={() => decide(item, "rejected")}>Reject</button></span> },
